@@ -18,15 +18,45 @@
 namespace BasicJson/Pretty {
 
     use Text/PrettyPrint.Doc;
-    use Text/PrettyPrint.{text, char, hcat, dquotes};    
-    use Text/PrettyPrint.{<>};
+    use Text/PrettyPrint.{text, char, hcat, dquotes, float64, int64, colon, 
+        commaBrackets, commaBraces};
+    use Text/PrettyPrint.{<>, <<>>};
 
     use BasicJson/Internal.StringWriter;
+    use BasicJson/Syntax.JsonValue;
+    use BasicJson/Syntax.JsonValue.{JsonObject, JsonArray, JsonString, 
+        JsonNumber, JsonFalse, JsonTrue, JsonNull};
+    
+    pub def ppValue(x: JsonValue): Doc = match x {
+        case JsonObject(nvs) => ppObject(nvs)
+        case JsonArray(xs) => ppArray(xs)
+        case JsonString(s) => ppString(s)
+        case JsonNumber(asFloat, d) => ppNumber(asFloat, d)
+        case JsonFalse => ppBoolean(false)
+        case JsonTrue => ppBoolean(true)
+        case JsonNull => ppNull()
+    }
 
     pub def ppNull(): Doc = text("null")
 
     pub def ppBoolean(b: Bool): Doc = 
         if (b) text("true") else text("false")
+
+
+    pub def ppNumber(asFloat: Bool, d: Float64): Doc = 
+        match d {
+            case x if Float64.isNan(x) => ppString("NaN")
+            case x if not Float64.isFinite(x) => ppString("Infinity")
+            case _ => {
+                if (asFloat) 
+                    float64(d)
+                else
+                    BasicJson/Internal/Utils.integerPart(d) |> int64
+            }
+        }
+
+    pub def ppArray(xs: List[JsonValue]): Doc = 
+        List.map(ppValue, xs) |> commaBrackets
 
     /// TODO escapes, multiline etc.
     pub def ppString(s: String): Doc = 
@@ -48,12 +78,13 @@ namespace BasicJson/Pretty {
             case _ => appendChar(c)
         }
 
-    pub def ppInt32(i: Int32): Doc = 
-        use Text/PrettyPrint.{int32};
-        int32(i)
 
     def isISOControl(c: Char): Bool = 
         import java.lang.Character:isISOControl(Char);
         isISOControl(c) as & Pure
+
+    pub def ppObject(kvs: Map[String, JsonValue]): Doc = 
+        let ppField = kv -> {let (k, v) = kv; ppString(k) <> colon() <<>> ppValue(v)};
+        Map.toList(kvs) |> List.map(ppField) |> commaBraces
 
 }

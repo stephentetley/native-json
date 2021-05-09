@@ -7,8 +7,9 @@ def main(_args: Array[String]): Int32 & Impure =
     0
 
 def test01(): Int32 & Impure =
-    use BasicJson/Pretty.{ppBoolean, ppInt32, ppString};
-    ppInt32(1000) |> println;
+    use BasicJson/Pretty.{ppBoolean, ppNumber, ppString};
+    ppNumber(false, 1000.0f64) |> println;
+    ppNumber(true, 1000.0001f64) |> println;
     ppString(String.unlines("Hello" :: "World" :: Nil)) |> println;
     0
 

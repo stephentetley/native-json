@@ -23,4 +23,9 @@ namespace BasicJson/Internal/Utils {
         import java.lang.Integer:toHexString(Int32);
         toHexString(n) as & Pure
 
+    pub def integerPart(d: Float64): Int64 = 
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.longValue();
+        longValue(valueOf(d)) as & Pure
+
 }
