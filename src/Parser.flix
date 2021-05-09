@@ -19,22 +19,61 @@ namespace BasicJson/Parser {
 
     use FlixParsec.Parser;
     use FlixParsec/Prim.{flatMap, return, map};
-    use FlixParsec/Combinators.{choice};
-    use FlixParsec/Combinators.{*>};
-    use FlixParsec/TokenSimple.{symbol, lexeme};
+    use FlixParsec/Combinators.{choice, alt};
+    use FlixParsec/Combinators.{<&>, <&, &>, <&&>, *>};
+    use FlixParsec/TokenSimple.{symbol, lexeme, commaBrackets, commaBracesWith, 
+        colon, float64, int64};
 
-    pub def pBoolean(): Parser[t1, Bool] = 
-        lexeme(
-            choice( 
-                    (symbol("true")  *> return(true))
-                ::  (symbol("false") *> return(false))
-                :: Nil
-            )
+    use BasicJson/Syntax.JsonValue;
+    use BasicJson/Syntax.JsonValue.{JsonObject, JsonArray, JsonString, 
+        JsonNumber, JsonFalse, JsonTrue, JsonNull};
+
+    /// JSON is always UTF-8...
+
+    pub def pValue(): Parser[t1, JsonValue] = 
+        let mkNumber = xy -> {let (b, d) = xy; JsonNumber(b, d)};
+        choice( 
+                (pNull()    &>      JsonNull)
+            :: (pTrue()     &>      JsonTrue)
+            :: (pFalse()    &>      JsonFalse)
+            :: (pArray()    <&&>    JsonArray)
+            :: (pString()   <&&>    JsonString)
+            :: (pObject()   <&&>    JsonObject)
+            :: (pNumber()   <&&>    mkNumber)
+            :: Nil
         )
 
-    /// pub def pString(): Parser[t1, String] = 
-    ///     let* _ = char('"');
+    pub def pNull(): Parser[t1, Unit] = 
+        lexeme(symbol("null") &> ())
 
 
+    pub def pTrue(): Parser[t1, Unit] = 
+        lexeme(symbol("true") &> ())
+
+    pub def pFalse(): Parser[t1, Unit] = 
+        lexeme(symbol("false") &> ())
+
+    pub def pArray(): Parser[t1, List[JsonValue]] = commaBrackets(pValue())
+
+    /// Needs rewriting to follow Json rules...
+    pub def pString(): Parser[t1, String] = 
+        FlixParsec/TokenSimple.stringLiteral()
+
+    pub def pObject(): Parser[t1, Map[String, JsonValue]] = 
+        let step = (ac, xy) -> {let (k, v) = xy; Map.insert(k, v, ac)};
+        commaBracesWith(step, Map.empty(), pField())
+
+
+    def pField(): Parser[t1, (String, JsonValue)] = 
+        let* n  = pString();
+        let* _  = colon();
+        let* v  = pValue();
+        return((n, v))
+
+    /// Needs rewriting to follow Json rules...
+    pub def pNumber(): Parser[t1, (Bool, Float64)] = 
+        let p1 = {let* x = int64(); return((false, Int64.toFloat64(x)))};
+        let p2 = {let* x = float64(); return((true, x))};
+        alt(p1, p2)
 
 }
