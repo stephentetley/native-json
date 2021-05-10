@@ -21,6 +21,6 @@ def temp01(): Int32 & Impure =
     0
 
 def test02(): Int32 & Impure =
-    use BasicJson/Parser.{pTrue};
-    FlixParsec/Prim.parsesString(pTrue(), "true") |> println;
+    use BasicJson/Parser.{pValue};
+    FlixParsec/Prim.parsesString(pValue(), "true") |> println;
     0

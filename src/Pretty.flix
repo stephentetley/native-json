@@ -67,15 +67,16 @@ namespace BasicJson/Pretty {
 
 
     def appendChar(c: Char): StringWriter[Unit] = 
-        use BasicJson/Internal/StringWriter.{appendString, appendChar, seqRight};
+        use BasicJson/Internal/StringWriter.{writeString, writeChar, seqRight};
+        use BasicJson/Internal/StringWriter.{*>};
         use BasicJson/Internal/Utils.{int32ToHexString};
         let toHex = ch -> Char.toInt32(ch) |> int32ToHexString |> String.padLeft(4, '0');
         match c { 
-            case '\\' => appendString("\\\\")
-            case '/' => appendString("\\/")
-            case '"' => seqRight(appendChar('\\'),  appendChar('"'))
-            case cc if isISOControl(cc) => appendString("\\u${toHex(cc)}")
-            case _ => appendChar(c)
+            case '\\' => writeString("\\\\")
+            case '/' => writeString("\\/")
+            case '"' => writeChar('\\') *> writeChar('"')
+            case cc if isISOControl(cc) => writeString("\\u${toHex(cc)}")
+            case _ => writeChar(c)
         }
 
 

@@ -78,11 +78,13 @@ namespace BasicJson/Internal/StringWriter {
 
     pub def flatMap(fn: a -> StringWriter[b], ma: StringWriter[a]): StringWriter[b] = bind(ma, fn)
 
+    pub def *>(ma: StringWriter[a], mb: StringWriter[b]): StringWriter[b] = seqRight(ma, mb)
 
-    pub def appendString(s: String): StringWriter[Unit] = 
+
+    pub def writeString(s: String): StringWriter[Unit] = 
         StringWriter(sb -> StringBuilder.appendString!(sb, s))
 
-    pub def appendChar(c: Char): StringWriter[Unit] = 
+    pub def writeChar(c: Char): StringWriter[Unit] = 
         StringWriter(sb -> StringBuilder.appendChar!(sb, c))
 
     pub def mapX(f: a -> StringWriter[b], xs: List[a]): StringWriter[Unit] = 
@@ -90,7 +92,7 @@ namespace BasicJson/Internal/StringWriter {
             mapXHelper(sb, f, xs)
         )
 
-    def mapXHelper(sb: StringBuilder, f: a -> StringWriter[b], xs: List[a]): Unit & Impure= 
+    def mapXHelper(sb: StringBuilder, f: a -> StringWriter[b], xs: List[a]): Unit & Impure = 
         match xs {
             case x :: rs => {
                 let ma = f(x);
@@ -99,5 +101,19 @@ namespace BasicJson/Internal/StringWriter {
             }
             case Nil => ()
         }
+
+    pub def writes(x: a): StringWriter[Unit] with ToString[a] = 
+        ToString.toString(x) |> writeString
+
+    pub def writeParens(parens: Bool, ma: StringWriter[a]): StringWriter[a] = 
+        if (parens) {
+            let* _  = writeChar('(');
+            let* a = ma;
+            let* _  = writeChar(')');
+            return(a)
+        } 
+        else ma
+
+            
 
 }

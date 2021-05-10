@@ -17,6 +17,8 @@
 
 namespace BasicJson/Syntax {
 
+    use BasicJson/Internal.StringWriter;
+
     /// See - https://www.json.org/json-en.html
     /// Files must be UTF-8
 
@@ -29,5 +31,22 @@ namespace BasicJson/Syntax {
         case JsonTrue
         case JsonNull
     }
+
+    instance ToString[JsonValue] {
+        pub def toString(x: JsonValue): String = 
+            BasicJson/Internal/StringWriter.exec(toStringHelper(x))
+    }
+
+    def toStringHelper(x: JsonValue): StringWriter[Unit] = 
+        use BasicJson/Internal/StringWriter.{writeString, writeParens};
+        use BasicJson/Internal/StringWriter.{*>};
+        match x { 
+            case JsonString(s) => writeString("JsonString") *> writeParens(true, writeString(s))
+            case JsonFalse => writeString("JsonFalse")
+            case JsonTrue => writeString("JsonTrue")
+            case JsonNull => writeString("JsonNull")
+            case _ => writeString("TODO")
+        }
+
 
 }
