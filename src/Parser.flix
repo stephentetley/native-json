@@ -21,7 +21,7 @@ namespace BasicJson/Parser {
     use FlixParsec/Prim.{flatMap, return, map};
     use FlixParsec/Combinators.{choice, alt};
     use FlixParsec/Combinators.{<&>, <&, &>, <&&>, *>};
-    use FlixParsec/TokenSimple.{symbol, lexeme, commaBrackets, commaBracesWith, 
+    use FlixParsec/TokenSimple.{symbol, lexeme, commaSep, commaSepWith, 
         colon, float64, int64};
 
     use BasicJson/Syntax.JsonValue;
@@ -30,18 +30,26 @@ namespace BasicJson/Parser {
 
     /// JSON is always UTF-8...
 
-    pub def pValue(): Parser[t1, JsonValue] = 
+
+    pub def pValue(): Parser[t1, JsonValue] = pValue2()
+
+    def pValue2(): Parser[t1, JsonValue] = 
+        alt(pArray()    <&&>    JsonArray, pValue1())
+
+    def pValue1(): Parser[t1, JsonValue] = 
+        alt(pObject()   <&&>    JsonObject, basicTerm())
+
+    def basicTerm(): Parser[t1, JsonValue] =  
         let mkNumber = xy -> {let (b, d) = xy; JsonNumber(b, d)};
         choice( 
-                (pNull()    &>      JsonNull)
+               (pString()   <&&>    JsonString)
+            :: (pNumber()   <&&>    mkNumber)
             :: (pTrue()     &>      JsonTrue)
             :: (pFalse()    &>      JsonFalse)
-            /// :: (pArray()    <&&>    JsonArray)
-            :: (pString()   <&&>    JsonString)
-            /// :: (pObject()   <&&>    JsonObject)
-            :: (pNumber()   <&&>    mkNumber)
+            :: (pNull()    &>      JsonNull)
             :: Nil
         )
+
 
     pub def pNull(): Parser[t1, Unit] = 
         lexeme(symbol("null") &> ())
@@ -53,7 +61,11 @@ namespace BasicJson/Parser {
     pub def pFalse(): Parser[t1, Unit] = 
         lexeme(symbol("false") &> ())
 
-    pub def pArray(): Parser[t1, List[JsonValue]] = commaBrackets(pValue())
+    pub def pArray(): Parser[t1, List[JsonValue]] = 
+        let* _  = symbol("[");
+        let* xs = commaSep(pValue());
+        let* _  = symbol("]");
+        return(xs)
 
     /// Needs rewriting to follow Json rules...
     pub def pString(): Parser[t1, String] = 
@@ -61,7 +73,10 @@ namespace BasicJson/Parser {
 
     pub def pObject(): Parser[t1, Map[String, JsonValue]] = 
         let step = (ac, xy) -> {let (k, v) = xy; Map.insert(k, v, ac)};
-        commaBracesWith(step, Map.empty(), pField())
+        let* _      = symbol("{");
+        let* kvs    = commaSepWith(step, Map.empty(), pField());
+        let* _      = symbol("}");
+        return(kvs)
 
 
     def pField(): Parser[t1, (String, JsonValue)] = 
