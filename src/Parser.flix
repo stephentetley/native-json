@@ -36,9 +36,9 @@ namespace BasicJson/Parser {
                 (pNull()    &>      JsonNull)
             :: (pTrue()     &>      JsonTrue)
             :: (pFalse()    &>      JsonFalse)
-            :: (pArray()    <&&>    JsonArray)
+            /// :: (pArray()    <&&>    JsonArray)
             :: (pString()   <&&>    JsonString)
-            :: (pObject()   <&&>    JsonObject)
+            /// :: (pObject()   <&&>    JsonObject)
             :: (pNumber()   <&&>    mkNumber)
             :: Nil
         )

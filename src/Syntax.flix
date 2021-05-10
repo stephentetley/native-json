@@ -37,11 +37,15 @@ namespace BasicJson/Syntax {
             BasicJson/Internal/StringWriter.exec(toStringHelper(x))
     }
 
+    /// TODO is this efficient as it uses `toString` between recursive levels?
     def toStringHelper(x: JsonValue): StringWriter[Unit] = 
-        use BasicJson/Internal/StringWriter.{writeString, writeParens};
+        use BasicJson/Internal/StringWriter.{writeString, writeParens, writes, writesList, writesMap};
         use BasicJson/Internal/StringWriter.{*>};
         match x { 
+            case JsonObject(kvs) => writeString("JsonObject") *> writeParens(true, writesMap(kvs))
+            case JsonArray(xs) => writeString("JsonArray") *> writeParens(true, writesList(xs))
             case JsonString(s) => writeString("JsonString") *> writeParens(true, writeString(s))
+            case JsonNumber(b, d) => writeString("JsonNumber") *> writeParens(true, writes(b) *> writeString(", ") *> writes(d))
             case JsonFalse => writeString("JsonFalse")
             case JsonTrue => writeString("JsonTrue")
             case JsonNull => writeString("JsonNull")

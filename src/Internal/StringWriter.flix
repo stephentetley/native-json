@@ -105,6 +105,30 @@ namespace BasicJson/Internal/StringWriter {
     pub def writes(x: a): StringWriter[Unit] with ToString[a] = 
         ToString.toString(x) |> writeString
 
+    pub def writesList(xs: List[a]): StringWriter[Unit] with ToString[a] = 
+        let* _ = mapX(x -> writes(x) *> writeString(" :: "), xs);
+        writeString("Nil")
+        
+    pub def writesMap(kvs: Map[k, v]): StringWriter[Unit] with ToString[k], ToString[v]= 
+        let* _ = writeString("Map#{");
+        let* _ = writesKeyValues(Map.toList(kvs));
+        writeString("}")
+
+    def writesKeyValues(kvs: List[(k, v)]): StringWriter[Unit] with ToString[k], ToString[v] = match kvs {
+        case Nil => return()
+        case x :: rs => {
+            let* _ = writesKV(x);
+            mapX(xy -> writeString(", ") *> writesKV(xy), rs)
+        }
+    }
+
+    def writesKV(kv: (k, v)): StringWriter[Unit] with ToString[k], ToString[v]= 
+        let (k, v) = kv;
+        let* _ = writes(k);
+        let* _ = writeString(" -> ");
+        let* _ = writes(v);
+        return()
+
     pub def writeParens(parens: Bool, ma: StringWriter[a]): StringWriter[a] = 
         if (parens) {
             let* _  = writeChar('(');
