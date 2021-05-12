@@ -5,6 +5,7 @@ def main(_args: Array[String]): Int32 & Impure =
     test01();
     temp01();
     test02();
+    test03();
     0
 
 def test01(): Int32 & Impure =
@@ -33,4 +34,11 @@ def test02(): Int32 & Impure =
     FlixParsec/Prim.parsesString(pValue(), "${key1}") |> println;
     FlixParsec/Prim.parsesString(pValue(), "{${key1}: 1000, ${key2}: false}") |> println;
     FlixParsec/Prim.parsesString(pValue(), "{${key1}: [true, null, 1000, false], ${key2}: false}") |> println;
+    0
+
+def test03(): Int32 & Impure =
+    use BasicJson/MarshalJson.toJsonValue;
+    use BasicJson/JsonReader.{runReader, getBool};
+    let js1 = toJsonValue(true);
+    runReader(js1, getBool()) |> println;
     0
