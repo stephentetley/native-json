@@ -25,6 +25,12 @@ namespace BasicJson {
         pub def fromJsonValue(x: JsonValue): Result[a, String]
     }
 
+    instance MarshalJson[JsonValue] {
+        pub def toJsonValue(x: JsonValue): JsonValue = x
+        pub def fromJsonValue(x: JsonValue): Result[JsonValue, String] = Ok(x)
+    }
+
+
     instance MarshalJson[Bool] {
         pub def toJsonValue(x: Bool): JsonValue = if (x) JsonTrue else JsonFalse
 

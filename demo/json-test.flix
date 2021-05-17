@@ -6,6 +6,7 @@ def main(_args: Array[String]): Int32 & Impure =
     temp01();
     test02();
     test03();
+    test04();
     0
 
 def test01(): Int32 & Impure =
@@ -42,3 +43,18 @@ def test03(): Int32 & Impure =
     let js1 = toJsonValue(true);
     runReader(js1, getBool()) |> println;
     0
+
+
+
+def test04(): Int32 & Impure = 
+    use BasicJson/MarshalJson.toJsonValue;
+    use BasicJson/JsonBuilder.{createObject, putField, arrayOf, objectOf};
+    let record1 = { name = "Flix", year = 2016, paradigms = "functional" :: "logic" :: "imperative" :: Nil };
+    let writer = x -> 
+        createObject()
+            |> putField("name", x.name)
+            |> putField("year", x.year)
+            |> putField("paradigms", arrayOf(x.paradigms));
+    writer(record1) |> objectOf |> BasicJson/Pretty.ppValue |> println;
+    0
+

@@ -52,5 +52,4 @@ namespace BasicJson/Syntax {
             case _ => writeString("TODO")
         }
 
-
 }
