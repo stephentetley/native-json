@@ -27,6 +27,10 @@ namespace BasicJson/Pretty {
     use BasicJson/Syntax.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonNumber, JsonFalse, JsonTrue, JsonNull};
     
+    pub def writeJson(path: String, value: JsonValue): Result[Unit, String] & Impure =
+        Text/PrettyPrint.writePretty(160, path, Text/Charset.utf_8(), ppValue(value))
+
+
     pub def ppValue(x: JsonValue): Doc = match x {
         case JsonObject(nvs) => ppObject(nvs)
         case JsonArray(xs) => ppArray(xs)

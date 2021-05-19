@@ -50,11 +50,12 @@ def test04(): Int32 & Impure =
     use BasicJson/MarshalJson.toJsonValue;
     use BasicJson/JsonBuilder.{createObject, putField, arrayOf, objectOf};
     let record1 = { name = "Flix", year = 2016, paradigms = "functional" :: "logic" :: "imperative" :: Nil };
+    let record2 = { name = "Haskell", year = 1990, paradigms = "functional" :: "lazy" :: Nil };
     let writer = x -> 
         createObject()
             |> putField("name", x.name)
             |> putField("year", x.year)
             |> putField("paradigms", arrayOf(x.paradigms));
-    writer(record1) |> objectOf |> BasicJson/Pretty.ppValue |> println;
+    arrayOf(List.map(writer >> objectOf, record1 :: record2 :: Nil)) |> BasicJson/Pretty.ppValue |> println;
     0
 
