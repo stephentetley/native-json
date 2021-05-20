@@ -19,16 +19,16 @@ namespace BasicJson/Pretty {
 
     use Text/PrettyPrint.Doc;
     use Text/PrettyPrint.{text, char, hcat, dquotes, float64, int64, colon, 
-        commaBrackets, commaBraces};
-    use Text/PrettyPrint.{<>, <<>>};
+        commaBrackets, intersperse, comma, hang, lbrace, rbrace, lbracket, rbracket};
+    use Text/PrettyPrint.{<>, <<>>, <&&>};
 
     use BasicJson/Internal.StringWriter;
     use BasicJson/Syntax.JsonValue;
     use BasicJson/Syntax.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonNumber, JsonFalse, JsonTrue, JsonNull};
     
-    pub def writeJson(path: String, value: JsonValue): Result[Unit, String] & Impure =
-        Text/PrettyPrint.writePretty(160, path, Text/Charset.utf_8(), ppValue(value))
+    pub def writeJson(path: System.FilePath, value: JsonValue): Result[Unit, String] & Impure =
+        Text/PrettyPrint.writePretty(160, ToString.toString(path), Text/Charset.utf_8(), ppValue(value))
 
 
     pub def ppValue(x: JsonValue): Doc = match x {
@@ -60,7 +60,9 @@ namespace BasicJson/Pretty {
         }
 
     pub def ppArray(xs: List[JsonValue]): Doc = 
-        List.map(ppValue, xs) |> commaBrackets
+        let elements = xs |> List.map(ppValue) |> intersperse(comma()); 
+        hang(2, (lbracket() <&&> elements)) <&&> rbracket()
+        
 
     /// TODO escapes, multiline etc.
     pub def ppString(s: String): Doc = 
@@ -90,6 +92,7 @@ namespace BasicJson/Pretty {
 
     pub def ppObject(kvs: Map[String, JsonValue]): Doc = 
         let ppField = kv -> {let (k, v) = kv; ppString(k) <> colon() <<>> ppValue(v)};
-        Map.toList(kvs) |> List.map(ppField) |> commaBraces
+        let fields = Map.toList(kvs) |> List.map(ppField) |> intersperse(comma()); 
+        hang(2, (lbrace() <&&> fields)) <&&> rbrace()
 
 }
