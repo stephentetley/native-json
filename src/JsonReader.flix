@@ -196,6 +196,16 @@ namespace BasicJson/JsonReader {
 
     /// ## Elemetary Readers
 
+    pub def withField(name: String, ma: JsonReader[a]): JsonReader[a] = 
+        JsonReader(jsv  -> match jsv { 
+            case JsonObject(kvs) => match Map.get(name, kvs) {
+                case Some(jsv) => apply1(ma, jsv)
+                case None => Err("withField - missing key - '${name}'")
+            }
+            case _ => Err("withField - not an object")
+        } as & Impure)
+
+
     pub def getBool(): JsonReader[Bool] = 
         JsonReader(jsv  -> match jsv { 
             case JsonTrue => Ok(true)
@@ -216,7 +226,7 @@ namespace BasicJson/JsonReader {
         } as & Impure)
 
     pub def getInteger(): JsonReader[Int64] = 
-        JsonReader(jsv  -> match jsv { 
+        JsonReader(jsv  -> match jsv {
             case JsonNumber(false, d) => match Float64.tryToInt64(d) {
                 case Some(i) => Ok(i)
                 case None => Err("getInteger - non-integer number")
@@ -226,14 +236,6 @@ namespace BasicJson/JsonReader {
 
     
 
-    pub def withField(name: String, ma: JsonReader[a]): JsonReader[a] = 
-        JsonReader(jsv  -> match jsv { 
-            case JsonObject(kvs) => match Map.get(name, kvs) {
-                case Some(jsv) => apply1(ma, jsv)
-                case None => Err("withField - missing key - '${name}'")
-            }
-            case _ => Err("withField - not an object")
-        } as & Impure)
 
     pub def getInt8(): JsonReader[Int8] =
         let* n = getInteger();
@@ -255,6 +257,23 @@ namespace BasicJson/JsonReader {
 
     pub def getFloat64(): JsonReader[Float64] = getNumber()
     
+    pub def withArray(ma: JsonReader[a]): JsonReader[List[a]] = 
+        JsonReader(jsv  -> match jsv {
+            case JsonArray(xs) => withArrayHelper(ma, xs, msg -> Err(msg), ks -> Ok(ks))
+            case _ => Err("withArray")
+        } as & Impure)
 
+    def withArrayHelper(ma: JsonReader[a], 
+                        xs: List[JsonValue], 
+                        fk: String-> Result[List[a], String], 
+                        sk: List[a] -> Result[List[a], String]): Result[List[a], String] & Impure= 
+        match xs { 
+            case Nil => sk(Nil)
+            case x :: rs => match apply1(ma, x) { 
+                case Ok(x1) => withArrayHelper(ma, rs, fk, ks -> sk(x1 :: ks))
+                case Err(msg) => fk(msg)
+            }
+
+        }
 
 }

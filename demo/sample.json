@@ -1,3 +1,8 @@
 {
-    "uxl_template": "G:/work/assets/valves/MMOP_uXL.xlsx"
+    "uxl_template": "G:/work/assets/MMOP_uXL.xlsx",
+    "aib_hierarchy_export": { 
+        "file": "G:/work/assets/equipment-hierarchy.xlsx", 
+        "sheet": "Sheet1"
+    },
+    "args": ["verbose", "no-waffle"]
 }
