@@ -46,6 +46,7 @@ namespace BasicJson/JsonReader {
     pub def throwError(msg: String): JsonReader[a] =
         JsonReader(_ -> Err(msg) as & Impure)
 
+    pub def fail(message: String) : JsonReader[a] = throwError(message)
 
     pub def catchError(ma: JsonReader[a], handle: String -> JsonReader[a]): JsonReader[a] =
         JsonReader(jsv -> match apply1(ma, jsv) { 
@@ -120,6 +121,16 @@ namespace BasicJson/JsonReader {
     pub def kleisliRight(f1: b -> JsonReader[c], f2: a -> JsonReader[b], x: a): JsonReader[c] =
         kleisliLeft(f2, f1, x)
 
+    pub def liftOption(x: Option[a], errMsg: String): JsonReader[a] =  match x {
+        case Some(a) => return(a)
+        case None    => fail(errMsg)
+    }
+
+    pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): JsonReader[a] =  match x {
+        case Ok(a) => return(a)
+        case Err(e) => fail(makeErrMsg(e))
+    }
+
 
     pub def alt(ma: JsonReader[a], mb: JsonReader[a]): JsonReader[a] =
         JsonReader(jsv -> 
@@ -134,6 +145,56 @@ namespace BasicJson/JsonReader {
 
     pub def getWithDefault(ma: JsonReader[a], d: a): JsonReader[a] = 
         alt(ma, return(d))
+
+    /// Alias for `seqRight`
+    pub def *>(p1: JsonReader[a], p2: JsonReader[b]): JsonReader[b] = 
+        seqRight(p1, p2)
+
+    /// Alias for `seqLeft`
+    pub def <*(p1: JsonReader[a], p2: JsonReader[b]): JsonReader[a] = 
+        seqLeft(p1, p2)
+
+    pub def <!>(p1: JsonReader[a], p2: JsonReader[a]): JsonReader[a] =
+        alt(p1, p2)
+
+    // Haskell's <$>
+    pub def <&>(f: a -> b, p2: JsonReader[a]): JsonReader[b] =
+        map(f, p2)
+
+    pub def <&(x: b, p1: JsonReader[a]): JsonReader[b] =
+        p1 *> return(x)
+
+    pub def &>(p1: JsonReader[a], x: b): JsonReader[b] =
+        p1 *> return(x)
+
+    /// Flipped <&>
+    pub def <&&>(p2: JsonReader[a], f: a -> b): JsonReader[b] =
+        map(f, p2)
+
+
+    // Haskell's ap <*>
+    pub def <*>(mf: JsonReader[a -> b], p2: JsonReader[a]): JsonReader[b] =
+        ap(mf, p2)
+
+    /// Flipped <*>
+    pub def <**>(p2: JsonReader[a], mf: JsonReader[a -> b]): JsonReader[b] =
+        ap(mf, p2)        
+
+
+    pub def >>=(p: JsonReader[a], k: a -> JsonReader[b]): JsonReader[b] =
+        bind(p, k)
+
+
+    pub def =<<(k: a -> JsonReader[b], p: JsonReader[a]): JsonReader[b] =
+        bind(p, k)
+
+    pub def >=>(f1: a -> JsonReader[b], f2: b -> JsonReader[c], x: a): JsonReader[c] =
+        kleisliLeft(f1, f2, x)
+
+    pub def <=<(f1: b -> JsonReader[c], f2: a -> JsonReader[b], x: a): JsonReader[c] = 
+        kleisliRight(f1, f2, x)
+
+    /// ## Elemetary Readers
 
     pub def getBool(): JsonReader[Bool] = 
         JsonReader(jsv  -> match jsv { 
@@ -153,6 +214,16 @@ namespace BasicJson/JsonReader {
             case JsonNumber(_, d) => Ok(d)
             case _ => Err("getNumber")
         } as & Impure)
+
+    pub def getInteger(): JsonReader[Int64] = 
+        JsonReader(jsv  -> match jsv { 
+            case JsonNumber(false, d) => match Float64.tryToInt64(d) {
+                case Some(i) => Ok(i)
+                case None => Err("getInteger - non-integer number")
+            }
+            case _ => Err("getNumber")
+        } as & Impure)
+
     
 
     pub def withField(name: String, ma: JsonReader[a]): JsonReader[a] = 
@@ -163,6 +234,27 @@ namespace BasicJson/JsonReader {
             }
             case _ => Err("withField - not an object")
         } as & Impure)
+
+    pub def getInt8(): JsonReader[Int8] =
+        let* n = getInteger();
+        liftOption(Int64.tryToInt8(n), "getInt8 - out of Int32 range")
+
+    pub def getInt16(): JsonReader[Int16] =
+        let* n = getInteger();
+        liftOption(Int64.tryToInt16(n), "getInt16 - out of Int32 range")
+
+    pub def getInt32(): JsonReader[Int32] = 
+        let* n = getInteger();
+        liftOption(Int64.tryToInt32(n), "getInt32 - out of Int32 range")
+
+    pub def getInt64(): JsonReader[Int64] = getInteger()
+
+    pub def getFloat32(): JsonReader[Float32] = 
+        let* n = getNumber();
+        liftOption(Float64.tryToFloat32(n), "getFloat32 - out of Float32 range")
+
+    pub def getFloat64(): JsonReader[Float64] = getNumber()
+    
 
 
 }
