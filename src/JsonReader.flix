@@ -33,7 +33,12 @@ namespace BasicJson/JsonReader {
         let JsonReader(x1) = ma;
         x1(jsv)
 
-    pub def runReader(jsv: JsonValue, ma: JsonReader[a]): Result[a, String] & Impure = apply1(ma, jsv)
+    pub def runJsonReader(ma: JsonReader[a], jsv: JsonValue): Result[a, String] & Impure = apply1(ma, jsv)
+    
+    pub def readJsonFile(ma: JsonReader[a], path: System.FilePath): Result[a, String] & Impure = 
+        use Result.{flatMap};
+        let* jsv = BasicJson/Parser.parseJsonFile(4, path);
+        runJsonReader(ma, jsv)
 
     pub def return(x: a): JsonReader[a] = 
         JsonReader(_ -> Ok(x) as & Impure)
@@ -143,5 +148,21 @@ namespace BasicJson/JsonReader {
             case _ => Err("getString")
         } as & Impure)
 
-        
+    pub def getNumber(): JsonReader[Float64] = 
+        JsonReader(jsv  -> match jsv { 
+            case JsonNumber(_, d) => Ok(d)
+            case _ => Err("getNumber")
+        } as & Impure)
+    
+
+    pub def withField(name: String, ma: JsonReader[a]): JsonReader[a] = 
+        JsonReader(jsv  -> match jsv { 
+            case JsonObject(kvs) => match Map.get(name, kvs) {
+                case Some(jsv) => apply1(ma, jsv)
+                case None => Err("withField - missing key - '${name}'")
+            }
+            case _ => Err("withField - not an object")
+        } as & Impure)
+
+
 }
