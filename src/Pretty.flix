@@ -25,7 +25,7 @@ namespace BasicJson/Pretty {
     use BasicJson/Internal.StringWriter;
     use BasicJson.JsonValue;
     use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
-        JsonNumber, JsonBool, JsonNull};
+        JsonFloat, JsonInt, JsonBool, JsonNull};
     
     pub def writeJson(path: System.FilePath, value: JsonValue): Result[Unit, String] & Impure =
         Text/PrettyPrint.writePretty(160, ToString.toString(path), Text/Charset.utf_8(), ppValue(value))
@@ -35,7 +35,8 @@ namespace BasicJson/Pretty {
         case JsonObject(nvs) => ppObject(nvs)
         case JsonArray(xs) => ppArray(xs)
         case JsonString(s) => ppString(s)
-        case JsonNumber(asFloat, d) => ppNumber(asFloat, d)
+        case JsonFloat(d) => ppFloat(d)
+        case JsonInt(d) => ppInt(d)
         case JsonBool(b) => ppBoolean(b)
         case JsonNull => ppNull()
     }
@@ -46,17 +47,14 @@ namespace BasicJson/Pretty {
         if (b) text("true") else text("false")
 
 
-    pub def ppNumber(asFloat: Bool, d: Float64): Doc = 
+    pub def ppFloat(d: Float64): Doc = 
         match d {
             case x if Float64.isNan(x) => ppString("NaN")
             case x if not Float64.isFinite(x) => ppString("Infinity")
-            case _ => {
-                if (asFloat) 
-                    float64(d)
-                else
-                    BasicJson/Internal/Utils.integerPart(d) |> int64
-            }
+            case _ => float64(d)
         }
+
+    pub def ppInt(n: Int64): Doc = int64(n)
 
     pub def ppArray(xs: List[JsonValue]): Doc = 
         let elements = xs |> List.map(ppValue) |> intersperse(comma()); 

@@ -25,7 +25,8 @@ namespace BasicJson {
         case JsonObject(Map[String, JsonValue])
         case JsonArray(List[JsonValue])
         case JsonString(String)
-        case JsonNumber(Bool, Float64)
+        case JsonFloat(Float64)
+        case JsonInt(Int64) 
         case JsonBool(Bool)
         case JsonNull
     }
@@ -40,8 +41,8 @@ namespace BasicJson/Datatypes {
     
     use BasicJson/Internal.StringWriter;
     use BasicJson.JsonValue;
-    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, JsonNumber, 
-        JsonBool, JsonNull};
+    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, JsonFloat, 
+        JsonInt, JsonBool, JsonNull};
 
 
     /// TODO is this efficient as it uses `toString` between recursive levels?
@@ -52,7 +53,8 @@ namespace BasicJson/Datatypes {
             case JsonObject(kvs) => writeString("JsonObject") *> writeParens(true, writesMap(kvs))
             case JsonArray(xs) => writeString("JsonArray") *> writeParens(true, writesList(xs))
             case JsonString(s) => writeString("JsonString") *> writeParens(true, writeString(s))
-            case JsonNumber(b, d) => writeString("JsonNumber") *> writeParens(true, writes(b) *> writeString(", ") *> writes(d))
+            case JsonFloat(d) => writeString("JsonFloat") *> writeParens(true, writes(d))
+            case JsonInt(n) => writeString("JsonInt") *> writeParens(true, writes(n))
             case JsonBool(b) => writeString("JsonBool") *> writeParens(true, if (b) writeString("true") else writeString("false"))
             case JsonNull => writeString("JsonNull")
             case _ => bug!("BasicJson/Datatypes.writeToString - match fail")

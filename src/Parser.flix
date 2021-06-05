@@ -26,7 +26,7 @@ namespace BasicJson/Parser {
 
     use BasicJson.JsonValue;
     use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
-        JsonNumber, JsonBool, JsonNull};
+        JsonFloat, JsonInt, JsonBool, JsonNull};
 
     /// JSON is always UTF-8...
 
@@ -48,13 +48,13 @@ namespace BasicJson/Parser {
         alt(pObject()   <&&>    JsonObject, basicTerm())
 
     def basicTerm(): Parser[t1, JsonValue] =  
-        let mkNumber = xy -> {let (b, d) = xy; JsonNumber(b, d)};
         choice( 
                (pString()   <&&>    JsonString)
-            :: (pNumber()   <&&>    mkNumber)
+            :: (pFloat()    <&&>    JsonFloat)
+            :: (pInt()      <&&>    JsonInt)
             :: (pTrue()     &>      JsonBool(true))
             :: (pFalse()    &>      JsonBool(false))
-            :: (pNull()    &>      JsonNull)
+            :: (pNull()     &>      JsonNull)
             :: Nil
         )
 
@@ -94,9 +94,14 @@ namespace BasicJson/Parser {
         return((n, v))
 
     /// Needs rewriting to follow Json rules...
-    pub def pNumber(): Parser[t1, (Bool, Float64)] = 
-        let p1 = {let* x = int64(); return((false, Int64.toFloat64(x)))};
-        let p2 = {let* x = float64(); return((true, x))};
-        alt(p1, p2)
+    pub def pNumber(): Parser[t1, Float64] = 
+        let pInt1 = map(Int64.toFloat64, pInt()); 
+        /// TODO should use int part as common prefix rather than alt...
+        alt(pFloat(), pInt1)
+
+    pub def pInt(): Parser[t1, Int64] = int64()
+
+    pub def pFloat(): Parser[t1, Float64] = float64()
+
 
 }

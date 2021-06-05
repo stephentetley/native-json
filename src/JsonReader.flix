@@ -27,7 +27,7 @@ namespace BasicJson/JsonReader {
 
     use BasicJson.JsonValue;
     use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
-        JsonNumber, JsonBool, JsonNull};
+        JsonFloat, JsonInt, JsonBool, JsonNull};
 
     def apply1(ma: JsonReader[a], jsv: JsonValue): Result[a, String] & Impure = 
         let JsonReader(x1) = ma;
@@ -224,19 +224,24 @@ namespace BasicJson/JsonReader {
             case _ => Err("getString")
         } as & Impure)
 
+    /// Reads both ints and floats
     pub def getNumber(): JsonReader[Float64] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonNumber(_, d) => Ok(d)
+            case JsonFloat(d) => Ok(d)
+            case JsonInt(i) => Ok(Int64.toFloat64(i))
+            case _ => Err("getNumber")
+        } as & Impure)
+
+    pub def getFloat(): JsonReader[Float64] = 
+        JsonReader(jsv  -> match jsv { 
+            case JsonFloat(d) => Ok(d)
             case _ => Err("getNumber")
         } as & Impure)
 
     pub def getInteger(): JsonReader[Int64] = 
         JsonReader(jsv  -> match jsv {
-            case JsonNumber(false, d) => match Float64.tryToInt64(d) {
-                case Some(i) => Ok(i)
-                case None => Err("getInteger - non-integer number")
-            }
-            case _ => Err("getNumber")
+            case JsonInt(i) => Ok(i)
+            case _ => Err("getInteger")
         } as & Impure)
 
     

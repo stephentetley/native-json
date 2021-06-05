@@ -18,7 +18,7 @@ namespace BasicJson {
 
     use BasicJson.JsonValue;
     use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
-        JsonNumber, JsonBool, JsonNull};
+        JsonFloat, JsonInt, JsonBool, JsonNull};
 
     pub lawless class MarshalJson[a] {
         pub def toJsonValue(x: a): JsonValue
@@ -50,10 +50,10 @@ namespace BasicJson {
     }
 
     instance MarshalJson[Int32] {
-        pub def toJsonValue(x: Int32): JsonValue = JsonNumber(false, Int32.toFloat64(x))
+        pub def toJsonValue(x: Int32): JsonValue = JsonInt(Int32.toInt64(x))
 
         pub def fromJsonValue(x: JsonValue): Result[Int32, String] = match x {
-            case JsonNumber(_, d) => Option.toOk(Float64.tryToInt32(d), "Unable to read Int32")
+            case JsonInt(d) => Option.toOk(Int64.tryToInt32(d), "Unable to read Int32")
             case _ => Err("Unable to read Int32")
         }
     }
