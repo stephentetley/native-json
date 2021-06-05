@@ -16,7 +16,7 @@
 
 namespace BasicJson {
 
-    pub opaque type JsonReader[a] = BasicJson/Syntax.JsonValue ~> Result[a, String]
+    pub opaque type JsonReader[a] = BasicJson.JsonValue ~> Result[a, String]
 
 }    
 
@@ -25,9 +25,9 @@ namespace BasicJson/JsonReader {
     use BasicJson.JsonReader;
     use BasicJson.JsonReader.{JsonReader};
 
-    use BasicJson/Syntax.JsonValue;
-    use BasicJson/Syntax.JsonValue.{JsonObject, JsonArray, JsonString, 
-        JsonNumber, JsonFalse, JsonTrue, JsonNull};
+    use BasicJson.JsonValue;
+    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
+        JsonNumber, JsonBool, JsonNull};
 
     def apply1(ma: JsonReader[a], jsv: JsonValue): Result[a, String] & Impure = 
         let JsonReader(x1) = ma;
@@ -206,10 +206,15 @@ namespace BasicJson/JsonReader {
         } as & Impure)
 
 
+    pub def getNull(): JsonReader[Unit] = 
+        JsonReader(jsv  -> match jsv { 
+            case JsonNull => Ok()
+            case _ => Err("getNull")
+        } as & Impure)
+
     pub def getBool(): JsonReader[Bool] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonTrue => Ok(true)
-            case JsonFalse => Ok(false)
+            case JsonBool(b) => Ok(b)
             case _ => Err("getBool")
         } as & Impure)
 
@@ -275,5 +280,29 @@ namespace BasicJson/JsonReader {
             }
 
         }
+
+    pub def filePath(): JsonReader[System.FilePath] = 
+        map(System/FilePath.new, getString())
+
+    /// Date is a JsonString
+    pub def localDate(formatter: Time/Format.DateFormatter): JsonReader[Time.LocalDate] = 
+        let* s = getString();
+        liftOption(Time/LocalDate.parse(s, formatter), "localDate - parse error")
+
+    pub def localTime(formatter: Time/Format.TimeFormatter): JsonReader[Time.LocalTime] = 
+        let* s = getString();
+        liftOption(Time/LocalTime.parse(s, formatter), "localTime - parse error")
+
+    pub def localDateTime(formatter: Time/Format.DateTimeFormatter): JsonReader[Time.LocalDateTime] = 
+        let* s = getString();
+        liftOption(Time/LocalDateTime.parse(s, formatter), "localDateTime - parse error")
+
+    pub def satisfy(test: JsonValue -> Bool): JsonReader[JsonValue] = 
+        JsonReader(jsv  -> if (test(jsv)) Ok(jsv) else Err("satisfy") as & Impure)
+
+    /// TODO - which Parsec style combinators are useful, especially if we anticipate
+    /// "semi-structured" reading / traversal?
+
+
 
 }

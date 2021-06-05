@@ -16,8 +16,8 @@
 
 namespace BasicJson/JsonBuilder {
 
-    use BasicJson/Syntax.JsonValue;
-    use BasicJson/Syntax.JsonValue.{JsonObject, JsonArray};
+    use BasicJson.JsonValue;
+    use BasicJson.JsonValue.{JsonObject, JsonArray};
     use BasicJson.MarshalJson;
 
     /// Note - may be wrapped as opaque at some point...

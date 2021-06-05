@@ -23,9 +23,9 @@ namespace BasicJson/Pretty {
     use Text/PrettyPrint.{<>, <<>>, <&&>};
 
     use BasicJson/Internal.StringWriter;
-    use BasicJson/Syntax.JsonValue;
-    use BasicJson/Syntax.JsonValue.{JsonObject, JsonArray, JsonString, 
-        JsonNumber, JsonFalse, JsonTrue, JsonNull};
+    use BasicJson.JsonValue;
+    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
+        JsonNumber, JsonBool, JsonNull};
     
     pub def writeJson(path: System.FilePath, value: JsonValue): Result[Unit, String] & Impure =
         Text/PrettyPrint.writePretty(160, ToString.toString(path), Text/Charset.utf_8(), ppValue(value))
@@ -36,8 +36,7 @@ namespace BasicJson/Pretty {
         case JsonArray(xs) => ppArray(xs)
         case JsonString(s) => ppString(s)
         case JsonNumber(asFloat, d) => ppNumber(asFloat, d)
-        case JsonFalse => ppBoolean(false)
-        case JsonTrue => ppBoolean(true)
+        case JsonBool(b) => ppBoolean(b)
         case JsonNull => ppNull()
     }
 

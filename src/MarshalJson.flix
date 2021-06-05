@@ -16,9 +16,9 @@
 
 namespace BasicJson {
 
-    use BasicJson/Syntax.JsonValue;
-    use BasicJson/Syntax.JsonValue.{JsonObject, JsonArray, JsonString, 
-        JsonNumber, JsonFalse, JsonTrue, JsonNull};
+    use BasicJson.JsonValue;
+    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
+        JsonNumber, JsonBool, JsonNull};
 
     pub lawless class MarshalJson[a] {
         pub def toJsonValue(x: a): JsonValue
@@ -32,11 +32,10 @@ namespace BasicJson {
 
 
     instance MarshalJson[Bool] {
-        pub def toJsonValue(x: Bool): JsonValue = if (x) JsonTrue else JsonFalse
+        pub def toJsonValue(x: Bool): JsonValue = JsonBool(x)
 
         pub def fromJsonValue(x: JsonValue): Result[Bool, String] = match x {
-            case JsonTrue => Ok(true)
-            case JsonFalse => Ok(false)
+            case JsonBool(b) => Ok(b)
             case _ => Err("Unable to read Bool")
         }
     }

@@ -15,9 +15,8 @@
  */
 
 
-namespace BasicJson/Syntax {
+namespace BasicJson {
 
-    use BasicJson/Internal.StringWriter;
 
     /// See - https://www.json.org/json-en.html
     /// Files must be UTF-8
@@ -27,18 +26,26 @@ namespace BasicJson/Syntax {
         case JsonArray(List[JsonValue])
         case JsonString(String)
         case JsonNumber(Bool, Float64)
-        case JsonFalse
-        case JsonTrue
+        case JsonBool(Bool)
         case JsonNull
     }
 
     instance ToString[JsonValue] {
         pub def toString(x: JsonValue): String = 
-            BasicJson/Internal/StringWriter.exec(toStringHelper(x))
+            BasicJson/Internal/StringWriter.exec(BasicJson/Datatypes.writeToString(x))
     }
+}
+
+namespace BasicJson/Datatypes {
+    
+    use BasicJson/Internal.StringWriter;
+    use BasicJson.JsonValue;
+    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, JsonNumber, 
+        JsonBool, JsonNull};
+
 
     /// TODO is this efficient as it uses `toString` between recursive levels?
-    def toStringHelper(x: JsonValue): StringWriter[Unit] = 
+    pub def writeToString(x: JsonValue): StringWriter[Unit] = 
         use BasicJson/Internal/StringWriter.{writeString, writeParens, writes, writesList, writesMap};
         use BasicJson/Internal/StringWriter.{*>};
         match x { 
@@ -46,10 +53,9 @@ namespace BasicJson/Syntax {
             case JsonArray(xs) => writeString("JsonArray") *> writeParens(true, writesList(xs))
             case JsonString(s) => writeString("JsonString") *> writeParens(true, writeString(s))
             case JsonNumber(b, d) => writeString("JsonNumber") *> writeParens(true, writes(b) *> writeString(", ") *> writes(d))
-            case JsonFalse => writeString("JsonFalse")
-            case JsonTrue => writeString("JsonTrue")
+            case JsonBool(b) => writeString("JsonBool") *> writeParens(true, if (b) writeString("true") else writeString("false"))
             case JsonNull => writeString("JsonNull")
-            case _ => writeString("TODO")
+            case _ => bug!("BasicJson/Datatypes.writeToString - match fail")
         }
 
 }

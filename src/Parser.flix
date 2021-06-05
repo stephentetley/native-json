@@ -24,9 +24,9 @@ namespace BasicJson/Parser {
     use FlixParsec/TokenSimple.{symbol, lexeme, commaSep, commaSepWith, 
         colon, float64, int64};
 
-    use BasicJson/Syntax.JsonValue;
-    use BasicJson/Syntax.JsonValue.{JsonObject, JsonArray, JsonString, 
-        JsonNumber, JsonFalse, JsonTrue, JsonNull};
+    use BasicJson.JsonValue;
+    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
+        JsonNumber, JsonBool, JsonNull};
 
     /// JSON is always UTF-8...
 
@@ -52,8 +52,8 @@ namespace BasicJson/Parser {
         choice( 
                (pString()   <&&>    JsonString)
             :: (pNumber()   <&&>    mkNumber)
-            :: (pTrue()     &>      JsonTrue)
-            :: (pFalse()    &>      JsonFalse)
+            :: (pTrue()     &>      JsonBool(true))
+            :: (pFalse()    &>      JsonBool(false))
             :: (pNull()    &>      JsonNull)
             :: Nil
         )
