@@ -15,12 +15,12 @@
  */
 
 
-namespace BasicJson/Pretty {
+namespace BasicJson/Pretty3 {
 
-    use Text/PrettyPrint.Doc;
-    use Text/PrettyPrint.{text, char, hcat, dquotes, float64, int64, colon, 
-        commaBrackets, intersperse, comma, hang, lbrace, rbrace, lbracket, rbracket};
-    use Text/PrettyPrint.{<>, <<>>, <&&>};
+    use Text/PrettyPrint/Strict.Doc;
+    use Text/PrettyPrint/Strict.{text, char, dquotes, float64, int64, colon, 
+        intersperse, comma, group, hang, lbrace, rbrace, lbracket, rbracket, empty};
+    use Text/PrettyPrint/Strict.{<>, <<>>, <&&>, <!>};
 
     use BasicJson/Internal.StringWriter;
     use BasicJson.JsonValue;
@@ -29,20 +29,24 @@ namespace BasicJson/Pretty {
     
     pub def writeJson(path: System.FilePath, value: JsonValue): Result[Unit, String] & Impure =
         let _ = Console.printLine("ppValue(_) ... ${Time/LocalTime.now()}");
-        let doc = ppValue(value);
-        let _ = Console.printLine("Text/PrettyPrint.writePretty(_) ... ${Time/LocalTime.now()}");
-        Text/PrettyPrint.writePretty(160, ToString.toString(path), Text/Charset.utf_8(), doc)
+        let doc = ppJson(value);
+        let _ = Console.printLine("Text/PPrint.writePretty(_) ... ${Time/LocalTime.now()}");
+        Text/PrettyPrint/Strict.writePretty(160, ToString.toString(path), Text/Charset.utf_8(), doc)
 
 
-    pub def ppValue(x: JsonValue): Doc = match x {
-        case JsonObject(nvs) => ppObject(nvs)
-        case JsonArray(xs) => ppArray(xs)
-        case JsonString(s) => ppString(s)
-        case JsonFloat(d) => ppFloat(d)
-        case JsonInt(d) => ppInt(d)
-        case JsonBool(b) => ppBoolean(b)
-        case JsonNull => ppNull()
+
+    pub def ppJson(x: JsonValue): Doc = ppValue(x, d1 -> d1)
+
+    def ppValue(x: JsonValue, cont: Doc -> Doc): Doc = match x {
+        case JsonObject(nvs) => ppObject(nvs, cont)
+        case JsonArray(xs) => ppArray(xs, cont)
+        case JsonString(s) => cont(ppString(s))
+        case JsonFloat(d) => cont(ppFloat(d))
+        case JsonInt(d) => cont(ppInt(d))
+        case JsonBool(b) => cont(ppBoolean(b))
+        case JsonNull => cont(ppNull())
     }
+
 
     pub def ppNull(): Doc = text("null")
 
@@ -59,9 +63,17 @@ namespace BasicJson/Pretty {
 
     pub def ppInt(n: Int64): Doc = int64(n)
 
-    pub def ppArray(xs: List[JsonValue]): Doc = 
-        let elements = xs |> List.map(ppValue) |> intersperse(comma()); 
-        hang(2, (lbracket() <&&> elements)) <&&> rbracket()
+    def ppArray(xs: List[JsonValue], cont: Doc -> Doc): Doc =
+        ppArrayHelper(xs, v1 -> cont(group(hang(2, lbracket() <!> v1 <!> rbracket()))))
+
+    def ppArrayHelper(xs: List[JsonValue], cont: Doc -> Doc): Doc = match xs { 
+        case Nil => cont(empty())
+        case x1 :: Nil => ppValue(x1, cont)
+        case x1 :: rs => 
+            ppValue(x1, v1 -> 
+                ppArrayHelper(rs, vs -> 
+                    cont(v1 <> comma() <!> vs)))
+    }
         
 
     /// TODO escapes, multiline etc.
@@ -90,9 +102,22 @@ namespace BasicJson/Pretty {
         import java.lang.Character:isISOControl(Char);
         isISOControl(c) as & Pure
 
-    pub def ppObject(kvs: Map[String, JsonValue]): Doc = 
-        let ppField = kv -> {let (k, v) = kv; ppString(k) <> colon() <<>> ppValue(v)};
-        let fields = Map.toList(kvs) |> List.map(ppField) |> intersperse(comma()); 
-        hang(2, (lbrace() <&&> fields)) <&&> rbrace()
+    def ppObject(kvs: Map[String, JsonValue], cont: Doc -> Doc): Doc = 
+        ppFields(Map.toList(kvs), v1 -> 
+            cont(group(hang(2, lbrace() <!> v1 <!> rbrace()))))
 
+    def ppFields(xs: List[(String, JsonValue)], cont: Doc -> Doc): Doc = match xs { 
+        case Nil => cont(empty())
+        case x1 :: Nil => ppField(x1, cont)
+        case x1 :: rs => 
+            ppField(x1, v1 -> 
+                ppFields(rs, vs -> 
+                    cont(v1 <> comma() <!> vs)))
+    }
+
+    def ppField(kv: (String, JsonValue), cont: Doc -> Doc): Doc =
+        let (key, value) = kv;
+        ppValue(value, v1 -> {
+            let d1 = ppString(key) <> colon() <<>> v1;
+            cont(d1)})
 }
