@@ -17,10 +17,10 @@
 
 namespace BasicJson/Pretty {
 
-    use Text/PrettyPrint.Doc;
-    use Text/PrettyPrint.{text, char, hcat, dquotes, float64, int64, colon, 
-        commaBrackets, intersperse, comma, hang, lbrace, rbrace, lbracket, rbracket};
-    use Text/PrettyPrint.{<>, <<>>, <&&>};
+    use Text/PrettyPrint/Lindig.Doc;
+    use Text/PrettyPrint/Lindig.{text, char, dquotes, float64, int64, colon, 
+        intersperse, comma, hang, group, lbrace, rbrace, lbracket, rbracket, empty};
+    use Text/PrettyPrint/Lindig.{<>, <<>>, <&&>, <!>};
 
     use BasicJson/Internal.StringWriter;
     use BasicJson.JsonValue;
@@ -29,20 +29,24 @@ namespace BasicJson/Pretty {
     
     pub def writeJson(path: System.FilePath, value: JsonValue): Result[Unit, String] & Impure =
         let _ = Console.printLine("ppValue(_) ... ${Time/LocalTime.now()}");
-        let doc = ppValue(value);
-        let _ = Console.printLine("Text/PrettyPrint.writePretty(_) ... ${Time/LocalTime.now()}");
-        Text/PrettyPrint.writePretty(160, ToString.toString(path), Text/Charset.utf_8(), doc)
+        let doc = ppJson(value);
+        let _ = Console.printLine("Text/PPrint.writePretty(_) ... ${Time/LocalTime.now()}");
+        Text/PrettyPrint/Lindig.writePretty(160, path, Text/Charset.utf_8(), doc)
 
 
-    pub def ppValue(x: JsonValue): Doc = match x {
-        case JsonObject(nvs) => ppObject(nvs)
-        case JsonArray(xs) => ppArray(xs)
-        case JsonString(s) => ppString(s)
-        case JsonFloat(d) => ppFloat(d)
-        case JsonInt(d) => ppInt(d)
-        case JsonBool(b) => ppBoolean(b)
-        case JsonNull => ppNull()
+
+    pub def ppJson(x: JsonValue): Doc = ppValue(x, d1 -> d1)
+
+    def ppValue(x: JsonValue, cont: Doc -> Doc): Doc = match x {
+        case JsonObject(nvs) => ppObject(nvs, cont)
+        case JsonArray(xs) => ppArray(xs, cont)
+        case JsonString(s) => cont(ppString(s))
+        case JsonFloat(d) => cont(ppFloat(d))
+        case JsonInt(d) => cont(ppInt(d))
+        case JsonBool(b) => cont(ppBoolean(b))
+        case JsonNull => cont(ppNull())
     }
+
 
     pub def ppNull(): Doc = text("null")
 
@@ -59,10 +63,6 @@ namespace BasicJson/Pretty {
 
     pub def ppInt(n: Int64): Doc = int64(n)
 
-    pub def ppArray(xs: List[JsonValue]): Doc = 
-        let elements = xs |> List.map(ppValue) |> intersperse(comma()); 
-        hang(2, (lbracket() <&&> elements)) <&&> rbracket()
-        
 
     /// TODO escapes, multiline etc.
     pub def ppString(s: String): Doc = 
@@ -90,9 +90,43 @@ namespace BasicJson/Pretty {
         import java.lang.Character:isISOControl(Char);
         isISOControl(c) as & Pure
 
-    pub def ppObject(kvs: Map[String, JsonValue]): Doc = 
-        let ppField = kv -> {let (k, v) = kv; ppString(k) <> colon() <<>> ppValue(v)};
-        let fields = Map.toList(kvs) |> List.map(ppField) |> intersperse(comma()); 
-        hang(2, (lbrace() <&&> fields)) <&&> rbrace()
+    def ppObject(kvs: Map[String, JsonValue], cont: Doc -> Doc): Doc = 
+        match Map.toList(kvs) {
+            case Nil => cont(lbrace() <!> rbrace())
+            case x1 :: rs => ppField(x1, v1 -> ppFieldsRest(rs, vs -> cont(hang(2, group(lbrace() <!> v1) <> vs <!> rbrace()))))
+        }
+    
+    /// One field aready printed so start with a comma...
+    def ppFieldsRest(xs: List[(String, JsonValue)], cont: Doc -> Doc): Doc = match xs { 
+        case Nil => cont(empty())
+        case x1 :: Nil => ppField(x1, v1 -> cont(comma() <!> v1))
+        case x1 :: rs => 
+            ppField(x1, v1 -> 
+                ppFieldsRest(rs, vs -> 
+                    cont(comma() <!> v1  <> vs)))
+    }
+
+    def ppField(kv: (String, JsonValue), cont: Doc -> Doc): Doc =
+        let (key, value) = kv;
+        ppValue(value, v1 -> {
+            let d1 = ppString(key) <> colon() <<>> v1;
+            cont(d1)})
+
+    def ppArray(xs: List[JsonValue], cont: Doc -> Doc): Doc = match xs { 
+        case Nil => cont(lbracket() <> rbracket())
+        case x1 :: rs => 
+            ppValue(x1, v1 -> 
+                ppArrayRest(rs, vs -> cont(hang(2, (group(lbracket() <!> v1) <!> vs <!> rbracket())))))
+    }
+
+    /// One field aready printed so start with a comma...
+    def ppArrayRest(xs: List[JsonValue], cont: Doc -> Doc): Doc = match xs { 
+        case Nil => cont(empty())
+        case x1 :: Nil => ppValue(x1, v1 -> cont(comma() <!> v1))
+        case x1 :: rs => 
+            ppValue(x1, v1 -> 
+                ppArrayRest(rs, vs -> 
+                    cont(comma() <!>  v1 <> vs)))
+    }
 
 }
