@@ -17,10 +17,10 @@
 
 namespace BasicJson/Pretty {
 
-    use Text/PrettyPrint/Lindig.Doc;
-    use Text/PrettyPrint/Lindig.{text, char, dquotes, float64, int64, colon, 
+    use Text/PrettyPrint.Doc;
+    use Text/PrettyPrint.{text, char, dquotes, float64, int64, colon, 
         intersperse, comma, hang, group, lbrace, rbrace, lbracket, rbracket, empty};
-    use Text/PrettyPrint/Lindig.{<>, <<>>, <&&>, <!>};
+    use Text/PrettyPrint.{<>, <<>>, <&&>, <!>};
 
     use BasicJson/Internal.StringWriter;
     use BasicJson.JsonValue;
@@ -31,7 +31,7 @@ namespace BasicJson/Pretty {
         let _ = Console.printLine("ppValue(_) ... ${Time/LocalTime.now()}");
         let doc = ppJson(value);
         let _ = Console.printLine("Text/PPrint.writePretty(_) ... ${Time/LocalTime.now()}");
-        Text/PrettyPrint/Lindig.writePretty(160, path, Text/Charset.utf_8(), doc)
+        Text/PrettyPrint.writePretty(160, path, Text/Charset.utf_8(), doc)
 
 
 
