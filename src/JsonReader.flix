@@ -292,15 +292,15 @@ namespace BasicJson/JsonReader {
     /// Date is a JsonString
     pub def localDate(formatter: Time/Format.DateFormatter): JsonReader[Time.LocalDate] = 
         let* s = getString();
-        liftOption(Time/LocalDate.parse(s, formatter), "localDate - parse error")
+        liftOption(Time/LocalDate.parse(formatter, s), "localDate - parse error")
 
     pub def localTime(formatter: Time/Format.TimeFormatter): JsonReader[Time.LocalTime] = 
         let* s = getString();
-        liftOption(Time/LocalTime.parse(s, formatter), "localTime - parse error")
+        liftOption(Time/LocalTime.parse(formatter, s), "localTime - parse error")
 
     pub def localDateTime(formatter: Time/Format.DateTimeFormatter): JsonReader[Time.LocalDateTime] = 
         let* s = getString();
-        liftOption(Time/LocalDateTime.parse(s, formatter), "localDateTime - parse error")
+        liftOption(Time/LocalDateTime.parse(formatter, s), "localDateTime - parse error")
 
     pub def satisfy(test: JsonValue -> Bool): JsonReader[JsonValue] = 
         JsonReader(jsv  -> if (test(jsv)) Ok(jsv) else Err("satisfy") as & Impure)
