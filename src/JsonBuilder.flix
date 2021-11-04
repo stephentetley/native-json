@@ -21,7 +21,7 @@ namespace BasicJson/JsonBuilder {
     use BasicJson.MarshalJson;
 
     /// Note - may be wrapped as opaque at some point...
-    type alias JsObject = Map[String, JsonValue]
+    pub type alias JsObject = Map[String, JsonValue]
 
     pub def createObject(): JsObject = Map.empty()
 
@@ -34,5 +34,8 @@ namespace BasicJson/JsonBuilder {
     pub def arrayOf(xs: List[a]): JsonValue with MarshalJson[a] = 
         JsonArray(List.map(BasicJson/MarshalJson.toJsonValue, xs))
 
+
+    pub def arrayOfObject(xs: List[JsObject]): JsonValue = 
+        JsonArray(List.map(objectOf, xs))
 
 }

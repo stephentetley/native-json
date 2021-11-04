@@ -21,12 +21,15 @@ def test01(): Result[Unit, String] & Impure =
     Ok()
 
 type alias Config = 
-    { uxlTemplate: System.FilePath
-    , aibHierarchy: ExcelTable
-    , args: List[String]
+    { uxlTemplate :: System.FilePath
+    , aibHierarchy :: ExcelTable
+    , args :: List[String]
     }
 
-type alias ExcelTable = {file: System.FilePath, sheet: String}
+type alias ExcelTable = 
+    { file :: System.FilePath
+    , sheet :: String
+    }
 
 def printConfig(x: Config): String = 
     "{uxlTemplate = '${x.uxlTemplate}', aibHierarchy = {file = '${x.aibHierarchy.file}', sheet = '${x.aibHierarchy.sheet}'}, args = ${x.args}}"
