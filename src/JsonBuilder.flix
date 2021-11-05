@@ -20,6 +20,8 @@ namespace BasicJson/JsonBuilder {
     use BasicJson.JsonValue.{JsonObject, JsonArray};
     use BasicJson.MarshalJson;
 
+    /// This module is underpowered - maybe we should use a monad so we can have conditional "put", etc.
+
     /// Note - may be wrapped as opaque at some point...
     pub type alias JsObject = Map[String, JsonValue]
 

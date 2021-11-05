@@ -33,6 +33,10 @@ namespace BasicJson/Pretty {
         let _ = Console.printLine("Text/PPrint.writePretty(_) ... ${Time/LocalTime.now()}");
         Text/PrettyPrint.writePretty(160, path, Text/Charset.utf_8(), doc)
 
+    pub def renderJson(value: JsonValue): String =
+        let doc = ppJson(value);
+        Text/PrettyPrint.render(160, doc)
+
 
 
     pub def ppJson(x: JsonValue): Doc = ppValue(x, d1 -> d1)
