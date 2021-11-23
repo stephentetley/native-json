@@ -17,8 +17,8 @@
 /// Experiment with a monadic wrapper over StringBuilder
 
 namespace BasicJson/Internal {
-    
-    pub opaque type StringWriter[a] = StringBuilder ~> a
+    /// Impure because the StringBuilder is mutated
+    pub opaque type StringWriter[a] = StringBuilder -> a & Impure
 
 }
 
@@ -46,18 +46,18 @@ namespace BasicJson/Internal/StringWriter {
         StringWriter(_ -> x as & Impure)
 
     /// Needs to allow allow effects (e.g create / access arrays)
-    pub def map(fn: a -> b & ef, ma: StringWriter[a]): StringWriter[b] = 
+    pub def map(fn: a -> b & ef, ma: StringWriter[a]): StringWriter[b] & ef = 
         StringWriter(sb -> 
             let a = apply1(ma, sb);
             fn(a) as & Impure
-        )
+        ) as & ef
 
-    pub def ap(mf: StringWriter[a -> b & ef], ma: StringWriter[a]): StringWriter[b] = 
+    pub def ap(mf: StringWriter[a -> b & ef], ma: StringWriter[a]): StringWriter[b] & ef = 
         StringWriter(sb -> 
             let f = apply1(mf, sb);
             let a = apply1(ma, sb);
             f(a) as & Impure
-        )
+        ) as & ef
 
     pub def seqLeft(ma: StringWriter[a], mb: StringWriter[b]): StringWriter[a] = 
         let* a = ma;
@@ -70,13 +70,13 @@ namespace BasicJson/Internal/StringWriter {
         return(b)
 
 
-    pub def bind(ma: StringWriter[a], fn: a -> StringWriter[b]): StringWriter[b] = 
+    pub def bind(ma: StringWriter[a], fn: a -> StringWriter[b] & ef): StringWriter[b] & ef= 
         StringWriter(sb -> 
             let a = apply1(ma, sb);
-            apply1(fn(a), sb)
-        )
+            apply1(fn(a) as & Impure, sb)
+        ) as & ef
 
-    pub def flatMap(fn: a -> StringWriter[b], ma: StringWriter[a]): StringWriter[b] = bind(ma, fn)
+    pub def flatMap(fn: a -> StringWriter[b] & ef, ma: StringWriter[a]): StringWriter[b] & ef = bind(ma, fn)
 
     pub def *>(ma: StringWriter[a], mb: StringWriter[b]): StringWriter[b] = seqRight(ma, mb)
 
@@ -87,15 +87,15 @@ namespace BasicJson/Internal/StringWriter {
     pub def writeChar(c: Char): StringWriter[Unit] = 
         StringWriter(sb -> StringBuilder.appendChar!(sb, c))
 
-    pub def mapX(f: a -> StringWriter[b], xs: List[a]): StringWriter[Unit] = 
+    pub def mapX(f: a -> StringWriter[b] & ef, xs: List[a]): StringWriter[Unit] & ef = 
         StringWriter(sb -> 
             mapXHelper(sb, f, xs)
-        )
+        ) as & ef
 
-    def mapXHelper(sb: StringBuilder, f: a -> StringWriter[b], xs: List[a]): Unit & Impure = 
+    def mapXHelper(sb: StringBuilder, f: a -> StringWriter[b] & ef, xs: List[a]): Unit & Impure = 
         match xs {
             case x :: rs => {
-                let ma = f(x);
+                let ma = f(x) as & Pure;
                 let _  = apply1(ma, sb);
                 mapXHelper(sb, f, rs)
             }

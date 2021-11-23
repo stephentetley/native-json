@@ -15,8 +15,9 @@
  */
 
 namespace BasicJson {
-
-    pub opaque type JsonReader[a] = BasicJson.JsonValue ~> Result[a, String]
+    
+    /// Pure - JsonArry is internally a list so no need for impure array access...
+    pub opaque type JsonReader[a] = BasicJson.JsonValue -> Result[a, String]
 
 }    
 
@@ -29,11 +30,11 @@ namespace BasicJson/JsonReader {
     use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonFloat, JsonInt, JsonBool, JsonNull};
 
-    def apply1(ma: JsonReader[a], jsv: JsonValue): Result[a, String] & Impure = 
+    def apply1(ma: JsonReader[a], jsv: JsonValue): Result[a, String] = 
         let JsonReader(x1) = ma;
         x1(jsv)
 
-    pub def runJsonReader(ma: JsonReader[a], jsv: JsonValue): Result[a, String] & Impure = apply1(ma, jsv)
+    pub def runJsonReader(ma: JsonReader[a], jsv: JsonValue): Result[a, String] = apply1(ma, jsv)
     
     pub def readJsonFile(ma: JsonReader[a], path: System.FilePath): Result[a, String] & Impure = 
         use Result.{flatMap};
@@ -41,10 +42,10 @@ namespace BasicJson/JsonReader {
         runJsonReader(ma, jsv)
 
     pub def return(x: a): JsonReader[a] = 
-        JsonReader(_ -> Ok(x) as & Impure)
+        JsonReader(_ -> Ok(x))
 
     pub def throwError(msg: String): JsonReader[a] =
-        JsonReader(_ -> Err(msg) as & Impure)
+        JsonReader(_ -> Err(msg))
 
     pub def fail(message: String) : JsonReader[a] = throwError(message)
 
@@ -61,24 +62,24 @@ namespace BasicJson/JsonReader {
         })
 
     /// Needs to allow allow effects (e.g create / access arrays)
-    pub def map(fn: a -> b & ef, ma: JsonReader[a]): JsonReader[b] = 
+    pub def map(fn: a -> b & ef, ma: JsonReader[a]): JsonReader[b] & ef = 
         JsonReader(jsv -> 
             match apply1(ma, jsv) { 
-                case Ok(a) => { let ans = fn(a) as & Impure; Ok(ans) }
+                case Ok(a) => { let ans = fn(a) as & Pure; Ok(ans) }
                 case Err(e) => Err(e)
             }
-        )
+        ) as & ef
 
-    pub def ap(mf: JsonReader[a -> b & ef], ma: JsonReader[a]): JsonReader[b] = 
+    pub def ap(mf: JsonReader[a -> b & ef], ma: JsonReader[a]): JsonReader[b] & ef = 
         JsonReader(jsv -> 
             match apply1(mf, jsv) { 
                 case Ok(f) => match apply1(ma, jsv) { 
-                    case Ok(a) => { let ans = f(a) as & Impure; Ok(ans) }
+                    case Ok(a) => { let ans = f(a) as & Pure; Ok(ans) }
                     case Err(e) => Err(e)
                 }
                 case Err(e) => Err(e)
             }
-        )
+        ) as & ef
 
     pub def seqLeft(ma: JsonReader[a], mb: JsonReader[b]): JsonReader[a] = 
         JsonReader(jsv -> 
@@ -203,26 +204,26 @@ namespace BasicJson/JsonReader {
                 case None => Err("withField - missing key - '${name}'")
             }
             case _ => Err("withField - not an object")
-        } as & Impure)
+        })
 
 
     pub def getNull(): JsonReader[Unit] = 
         JsonReader(jsv  -> match jsv { 
             case JsonNull => Ok()
             case _ => Err("getNull")
-        } as & Impure)
+        })
 
     pub def getBool(): JsonReader[Bool] = 
         JsonReader(jsv  -> match jsv { 
             case JsonBool(b) => Ok(b)
             case _ => Err("getBool")
-        } as & Impure)
+        })
 
     pub def getString(): JsonReader[String] = 
         JsonReader(jsv  -> match jsv { 
             case JsonString(s) => Ok(s)
             case _ => Err("getString")
-        } as & Impure)
+        })
 
     /// Reads both ints and floats
     pub def getNumber(): JsonReader[Float64] = 
@@ -230,19 +231,19 @@ namespace BasicJson/JsonReader {
             case JsonFloat(d) => Ok(d)
             case JsonInt(i) => Ok(Int64.toFloat64(i))
             case _ => Err("getNumber")
-        } as & Impure)
+        })
 
     pub def getFloat(): JsonReader[Float64] = 
         JsonReader(jsv  -> match jsv { 
             case JsonFloat(d) => Ok(d)
             case _ => Err("getNumber")
-        } as & Impure)
+        })
 
     pub def getInteger(): JsonReader[Int64] = 
         JsonReader(jsv  -> match jsv {
             case JsonInt(i) => Ok(i)
             case _ => Err("getInteger")
-        } as & Impure)
+        })
 
     
 
@@ -271,12 +272,12 @@ namespace BasicJson/JsonReader {
         JsonReader(jsv  -> match jsv {
             case JsonArray(xs) => withArrayHelper(ma, xs, msg -> Err(msg), ks -> Ok(ks))
             case _ => Err("withArray")
-        } as & Impure)
+        })
 
     def withArrayHelper(ma: JsonReader[a], 
                         xs: List[JsonValue], 
                         fk: String-> Result[List[a], String], 
-                        sk: List[a] -> Result[List[a], String]): Result[List[a], String] & Impure= 
+                        sk: List[a] -> Result[List[a], String]): Result[List[a], String] = 
         match xs { 
             case Nil => sk(Nil)
             case x :: rs => match apply1(ma, x) { 
@@ -303,7 +304,7 @@ namespace BasicJson/JsonReader {
         liftOption(Time/LocalDateTime.parse(formatter, s), "localDateTime - parse error")
 
     pub def satisfy(test: JsonValue -> Bool): JsonReader[JsonValue] = 
-        JsonReader(jsv  -> if (test(jsv)) Ok(jsv) else Err("satisfy") as & Impure)
+        JsonReader(jsv  -> if (test(jsv)) Ok(jsv) else Err("satisfy"))
 
     /// TODO - which Parsec style combinators are useful, especially if we anticipate
     /// "semi-structured" reading / traversal?

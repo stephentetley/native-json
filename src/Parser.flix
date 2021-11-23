@@ -36,7 +36,7 @@ namespace BasicJson/Parser {
 
 
     pub def parseJsonFile(tabSize: Int32, path: System.FilePath): Result[JsonValue, String] & Impure =
-        FlixParsec/Prim.parsesFile(pValue(), tabSize, path, Text/Charset.utf_8())
+        FlixParsec/Extras.parsesFile(pValue(), tabSize, path, Text/Charset.utf_8())
 
 
     pub def pValue(): Parser[t1, JsonValue] = pValue2()
