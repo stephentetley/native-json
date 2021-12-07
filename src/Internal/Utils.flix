@@ -20,11 +20,11 @@ namespace BasicJson/Internal/Utils {
 
 
     pub def int32ToHexString(n: Int32): String = 
-        import java.lang.Integer:toHexString(Int32);
+        import static java.lang.Integer.toHexString(Int32);
         toHexString(n) as & Pure
 
     pub def integerPart(d: Float64): Int64 = 
-        import java.lang.Double:valueOf(Float64);
+        import static java.lang.Double.valueOf(Float64);
         import java.lang.Double.longValue();
         longValue(valueOf(d)) as & Pure
 
