@@ -28,9 +28,7 @@ namespace BasicJson/Pretty {
         JsonFloat, JsonInt, JsonBool, JsonNull};
     
     pub def writeJson(path: System.FilePath, value: JsonValue): Result[Unit, String] & Impure =
-        let _ = Console.printLine("ppValue(_) ... ${Time/LocalTime.now()}");
         let doc = ppJson(value);
-        let _ = Console.printLine("Text/PPrint.writePretty(_) ... ${Time/LocalTime.now()}");
         Text/PrettyPrint.writePretty(160, path, Text/Charset.utf_8(), doc)
 
     pub def renderJson(value: JsonValue): String =
