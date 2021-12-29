@@ -2,14 +2,14 @@ use BasicJson.JsonReader;
 
 
 def main(_args: Array[String]): Int32 & Impure = 
-    Console.printLine("Running... ${Time/LocalTime.now()}");
+    println("Running... ${Time/LocalTime.now()}");
     test01() |> report;
     0
 
 def report(r: Result[a, String]): Unit & Impure = 
     match r { 
-        case Ok(_) => Console.printLine("Ok.")
-        case Err(msg) => Console.printLine("Err: ${msg}")
+        case Ok(_) => println("Ok.")
+        case Err(msg) => println("Err: ${msg}")
     }
     
 def test01(): Result[Unit, String] & Impure = 
@@ -17,7 +17,7 @@ def test01(): Result[Unit, String] & Impure =
     use BasicJson/JsonReader.{readJsonFile, getString};
     let srcpath = System/FilePath.new("E:/coding/flix/basic-json/demo/sample.json");
     let* ans = readJsonFile(decode(), srcpath);
-    let _ = Console.printLine("${printConfig(ans)}");
+    let _    = println("${printConfig(ans)}");
     Ok()
 
 type alias Config = 

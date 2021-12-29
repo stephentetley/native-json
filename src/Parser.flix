@@ -17,10 +17,13 @@
 
 namespace BasicJson/Parser {
 
+    use Functor.{ignore};
+    use Functor.{<$>, <$$>, $>};
+    use Applicative.{point};
+
     use FlixParsec.Parser;
-    use FlixParsec/Prim.{flatMap, return, map};
+    use FlixParsec/Prim.{flatMap};
     use FlixParsec/Combinators.{choice, alt};
-    use FlixParsec/Combinators.{<&>, <&, &>, <&&>, *>};
     use FlixParsec/TokenSimple.{symbol, lexeme, commaSep, commaSepWith, 
         colon, float64, int64};
 
@@ -42,38 +45,38 @@ namespace BasicJson/Parser {
     pub def pValue(): Parser[t1, JsonValue] = pValue2()
 
     def pValue2(): Parser[t1, JsonValue] = 
-        alt(pArray()    <&&>    JsonArray, pValue1())
+        alt(JsonArray <$> pArray(), pValue1())
 
     def pValue1(): Parser[t1, JsonValue] = 
-        alt(pObject()   <&&>    JsonObject, basicTerm())
+        alt(JsonObject <$> pObject(), basicTerm())
 
     def basicTerm(): Parser[t1, JsonValue] =  
         choice( 
-               (pString()   <&&>    JsonString)
-            :: (pFloat()    <&&>    JsonFloat)
-            :: (pInt()      <&&>    JsonInt)
-            :: (pTrue()     &>      JsonBool(true))
-            :: (pFalse()    &>      JsonBool(false))
-            :: (pNull()     &>      JsonNull)
+               (pString()   <$$>    JsonString)
+            :: (pFloat()    <$$>    JsonFloat)
+            :: (pInt()      <$$>    JsonInt)
+            :: (pTrue()     $>      JsonBool(true))
+            :: (pFalse()    $>      JsonBool(false))
+            :: (pNull()     $>      JsonNull)
             :: Nil
         )
 
 
     pub def pNull(): Parser[t1, Unit] = 
-        lexeme(symbol("null") &> ())
+        lexeme(symbol("null")) |> ignore
 
 
     pub def pTrue(): Parser[t1, Unit] = 
-        lexeme(symbol("true") &> ())
+        lexeme(symbol("true")) |> ignore
 
     pub def pFalse(): Parser[t1, Unit] = 
-        lexeme(symbol("false") &> ())
+        lexeme(symbol("false")) |> ignore
 
     pub def pArray(): Parser[t1, List[JsonValue]] = 
         let* _  = symbol("[");
         let* xs = commaSep(pValue());
         let* _  = symbol("]");
-        return(xs)
+        point(xs)
 
     /// Needs rewriting to follow Json rules...
     pub def pString(): Parser[t1, String] = 
@@ -84,18 +87,18 @@ namespace BasicJson/Parser {
         let* _      = symbol("{");
         let* kvs    = commaSepWith(step, Map.empty(), pField());
         let* _      = symbol("}");
-        return(kvs)
+        point(kvs)
 
 
     def pField(): Parser[t1, (String, JsonValue)] = 
         let* n  = pString();
         let* _  = colon();
         let* v  = pValue();
-        return((n, v))
+        point((n, v))
 
     /// Needs rewriting to follow Json rules...
     pub def pNumber(): Parser[t1, Float64] = 
-        let pInt1 = map(Int64.toFloat64, pInt()); 
+        let pInt1 = Int64.toFloat64 <$> pInt(); 
         /// TODO should use int part as common prefix rather than alt...
         alt(pFloat(), pInt1)
 
