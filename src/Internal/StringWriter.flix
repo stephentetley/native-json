@@ -20,6 +20,8 @@ namespace BasicJson/Internal {
     /// Impure because the StringBuilder is mutated
     pub opaque type StringWriter[a] = StringBuilder -> a & Impure
 
+    /// TODO use FAM classes
+
 }
 
 namespace BasicJson/Internal/StringWriter {
@@ -82,10 +84,10 @@ namespace BasicJson/Internal/StringWriter {
 
 
     pub def writeString(s: String): StringWriter[Unit] = 
-        StringWriter(sb -> StringBuilder.appendString!(sb, s))
+        StringWriter(sb -> StringBuilder.append!(sb, s))
 
     pub def writeChar(c: Char): StringWriter[Unit] = 
-        StringWriter(sb -> StringBuilder.appendChar!(sb, c))
+        StringWriter(sb -> StringBuilder.append!(sb, c))
 
     pub def mapX(f: a -> StringWriter[b] & ef, xs: List[a]): StringWriter[Unit] & ef = 
         StringWriter(sb -> 
