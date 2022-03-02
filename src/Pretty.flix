@@ -89,8 +89,8 @@ namespace BasicJson/Pretty {
 
 
     def isISOControl(c: Char): Bool = 
-        import static java.lang.Character.isISOControl(Char);
-        isISOControl(c) as & Pure
+        import static java.lang.Character.isISOControl(Char): Bool & Pure;
+        isISOControl(c)
 
     def ppObject(kvs: Map[String, JsonValue], cont: Doc -> Doc): Doc = 
         match Map.toList(kvs) {
