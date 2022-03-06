@@ -58,6 +58,15 @@ namespace BasicJson {
         }
     }
 
+    instance MarshalJson[Float64] {
+        pub def toJsonValue(x: Float64): JsonValue = JsonFloat(x)
+
+        pub def fromJsonValue(x: JsonValue): Result[Float64, String] = match x {
+            case JsonFloat(d) => Ok(d)
+            case _ => Err("Unable to read Int32")
+        }
+    }
+
     instance MarshalJson[List[a]] with MarshalJson[a] {
         pub def toJsonValue(xs: List[a]): JsonValue = 
             JsonArray(List.map(BasicJson/MarshalJson.toJsonValue, xs))
