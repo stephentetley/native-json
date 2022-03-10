@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 namespace BasicJson/JsonBuilder {
 
     use BasicJson.JsonValue;
@@ -39,5 +40,6 @@ namespace BasicJson/JsonBuilder {
 
     pub def arrayOfObject(xs: List[JsObject]): JsonValue = 
         JsonArray(List.map(objectOf, xs))
+
 
 }

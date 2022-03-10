@@ -17,6 +17,10 @@
 
 namespace BasicJson {
 
+    /// Scope types for JsonReader
+    pub enum JsObject {}
+    pub enum JsValue {}
+
 
     /// See - https://www.json.org/json-en.html
     /// Files must be UTF-8

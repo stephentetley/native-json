@@ -22,8 +22,10 @@ namespace BasicJson {
     /// a JSON object the only primitive reader you can use is`getFieldWith`.
     pub opaque type JsonReader[_scope, a] = BasicJson.JsonValue -> Result[a, String] & Impure
 
-    pub enum JsObject {}
-    pub enum JsValue {}
+    /// Note - probably we will need to move to a ContReader monad to handle
+    /// large input.
+
+
 
     instance Functor[JsonReader[scope]] {
         pub def map(f: a -> b & ef, x: JsonReader[scope, a]): JsonReader[scope, b] & ef = 
