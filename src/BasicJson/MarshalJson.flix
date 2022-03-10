@@ -36,7 +36,7 @@ namespace BasicJson {
 
         pub def fromJsonValue(x: JsonValue): Result[Bool, String] = match x {
             case JsonBool(b) => Ok(b)
-            case _ => Err("Unable to read Bool")
+            case _           => Err("Unable to read Bool")
         }
     }
 
@@ -45,7 +45,25 @@ namespace BasicJson {
 
         pub def fromJsonValue(x: JsonValue): Result[String, String] = match x {
             case JsonString(s) => Ok(s)
-            case _ => Err("Unable to read String")
+            case _             => Err("Unable to read String")
+        }
+    }
+
+    instance MarshalJson[Int8] {
+        pub def toJsonValue(x: Int8): JsonValue = JsonInt(Int8.toInt64(x))
+
+        pub def fromJsonValue(x: JsonValue): Result[Int8, String] = match x {
+            case JsonInt(d) => Option.toOk(Int64.tryToInt8(d), "Unable to read Int8")
+            case _          => Err("Unable to read Int8")
+        }
+    }
+
+    instance MarshalJson[Int16] {
+        pub def toJsonValue(x: Int16): JsonValue = JsonInt(Int16.toInt64(x))
+
+        pub def fromJsonValue(x: JsonValue): Result[Int16, String] = match x {
+            case JsonInt(d) => Option.toOk(Int64.tryToInt16(d), "Unable to read Int16")
+            case _          => Err("Unable to read Int16")
         }
     }
 
@@ -54,7 +72,25 @@ namespace BasicJson {
 
         pub def fromJsonValue(x: JsonValue): Result[Int32, String] = match x {
             case JsonInt(d) => Option.toOk(Int64.tryToInt32(d), "Unable to read Int32")
-            case _ => Err("Unable to read Int32")
+            case _          => Err("Unable to read Int32")
+        }
+    }
+
+    instance MarshalJson[Int64] {
+        pub def toJsonValue(x: Int64): JsonValue = JsonInt(x)
+
+        pub def fromJsonValue(x: JsonValue): Result[Int64, String] = match x {
+            case JsonInt(d) => Ok(d)
+            case _          => Err("Unable to read Int64")
+        }
+    }
+
+    instance MarshalJson[Float32] {
+        pub def toJsonValue(x: Float32): JsonValue = JsonFloat(Float32.toFloat64(x))
+
+        pub def fromJsonValue(x: JsonValue): Result[Float32, String] = match x {
+            case JsonFloat(d) => Option.toOk(Float64.tryToFloat32(d), "Unable to read Float32")
+            case _            => Err("Unable to read Float32")
         }
     }
 
@@ -63,7 +99,7 @@ namespace BasicJson {
 
         pub def fromJsonValue(x: JsonValue): Result[Float64, String] = match x {
             case JsonFloat(d) => Ok(d)
-            case _ => Err("Unable to read Int32")
+            case _            => Err("Unable to read Float64")
         }
     }
 

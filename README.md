@@ -2,8 +2,12 @@
 
 Simple library to read and write JSON files in Flix
 
-Dependency on `flix-pretty`
+Dependencies:
 
-Dependency on `flix-parsec`
+https://github.com/stephentetley/flix-pretty
 
-Dependency on `flix-sandbox`
+https://github.com/stephentetley/flix-parsec
+
+https://github.com/stephentetley/flix-regex
+
+https://github.com/stephentetley/flix-sandbox

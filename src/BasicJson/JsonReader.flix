@@ -16,8 +16,14 @@
 
 namespace BasicJson {
     
-    /// Pure - JsonArry is internally a list so no need for impure array access...
-    pub opaque type JsonReader[a] = BasicJson.JsonValue -> Result[a, String]
+    /// This is Impure so we aren't casting to Pure.
+    /// Ideally we would track `ef` in the type.
+    pub opaque type JsonReader[a] = BasicJson.JsonValue -> Result[a, String] & Impure
+
+    instance Functor[JsonReader] {
+        pub def map(f: a -> b & ef, x: JsonReader[a]): JsonReader[b] & ef = 
+          BasicJson/JsonReader.map(f, x)  
+    }
 
 }    
 
@@ -30,22 +36,22 @@ namespace BasicJson/JsonReader {
     use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonFloat, JsonInt, JsonBool, JsonNull};
 
-    def apply1(ma: JsonReader[a], jsv: JsonValue): Result[a, String] = 
+    def apply1(ma: JsonReader[a], jsv: JsonValue): Result[a, String] & Impure = 
         let JsonReader(x1) = ma;
         x1(jsv)
 
-    pub def runJsonReader(ma: JsonReader[a], jsv: JsonValue): Result[a, String] = apply1(ma, jsv)
+    pub def runJsonReader(ma: JsonReader[a], jsv: JsonValue): Result[a, String] & Impure = apply1(ma, jsv)
     
     pub def readJsonFile(ma: JsonReader[a], path: System.FilePath): Result[a, String] & Impure = 
         use Result.{flatMap};
         let* jsv = BasicJson/Parser.parseJsonFile(4, path);
         runJsonReader(ma, jsv)
 
-    pub def return(x: a): JsonReader[a] = 
-        JsonReader(_ -> Ok(x))
+    pub def point(x: a): JsonReader[a] = 
+        JsonReader(_ -> Ok(x) as & Impure)
 
     pub def throwError(msg: String): JsonReader[a] =
-        JsonReader(_ -> Err(msg))
+        JsonReader(_ -> Err(msg) as & Impure)
 
     pub def fail(message: String) : JsonReader[a] = throwError(message)
 
@@ -65,7 +71,7 @@ namespace BasicJson/JsonReader {
     pub def map(fn: a -> b & ef, ma: JsonReader[a]): JsonReader[b] & ef = 
         JsonReader(jsv -> 
             match apply1(ma, jsv) { 
-                case Ok(a) => { let ans = fn(a) as & Pure; Ok(ans) }
+                case Ok(a) => { let ans = fn(a) as & Impure; Ok(ans) }
                 case Err(e) => Err(e)
             }
         ) as & ef
@@ -74,7 +80,7 @@ namespace BasicJson/JsonReader {
         JsonReader(jsv -> 
             match apply1(mf, jsv) { 
                 case Ok(f) => match apply1(ma, jsv) { 
-                    case Ok(a) => { let ans = f(a) as & Pure; Ok(ans) }
+                    case Ok(a) => { let ans = f(a) as & Impure; Ok(ans) }
                     case Err(e) => Err(e)
                 }
                 case Err(e) => Err(e)
@@ -101,15 +107,15 @@ namespace BasicJson/JsonReader {
         )
 
 
-    pub def bind(ma: JsonReader[a], fn: a -> JsonReader[b]): JsonReader[b] = 
+    pub def bind(ma: JsonReader[a], fn: a -> JsonReader[b] & ef): JsonReader[b] & ef= 
         JsonReader(jsv -> 
             match apply1(ma, jsv) { 
-                case Ok(a) => apply1(fn(a), jsv)
+                case Ok(a) => apply1(fn(a) as & Impure, jsv) 
                 case Err(e) => Err(e)
             }
-        )
+        ) as & ef
 
-    pub def flatMap(fn: a -> JsonReader[b], ma: JsonReader[a]): JsonReader[b] = bind(ma, fn)
+    pub def flatMap(fn: a -> JsonReader[b] & ef, ma: JsonReader[a]): JsonReader[b] & ef = bind(ma, fn)
 
     pub def kleisliLeft(f1: a -> JsonReader[b], f2: b -> JsonReader[c], x: a): JsonReader[c] =
         JsonReader(jsv -> 
@@ -123,12 +129,12 @@ namespace BasicJson/JsonReader {
         kleisliLeft(f2, f1, x)
 
     pub def liftOption(x: Option[a], errMsg: String): JsonReader[a] =  match x {
-        case Some(a) => return(a)
+        case Some(a) => point(a)
         case None    => fail(errMsg)
     }
 
     pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): JsonReader[a] =  match x {
-        case Ok(a) => return(a)
+        case Ok(a) => point(a)
         case Err(e) => fail(makeErrMsg(e))
     }
 
@@ -142,10 +148,10 @@ namespace BasicJson/JsonReader {
         )
 
     pub def optional(ma: JsonReader[a]): JsonReader[Option[a]] = 
-        alt(map(Some, ma), return(None))
+        alt(map(Some, ma), point(None))
 
     pub def getWithDefault(ma: JsonReader[a], d: a): JsonReader[a] = 
-        alt(ma, return(d))
+        alt(ma, point(d))
 
     /// Alias for `seqRight`
     pub def *>(p1: JsonReader[a], p2: JsonReader[b]): JsonReader[b] = 
@@ -163,10 +169,10 @@ namespace BasicJson/JsonReader {
         map(f, p2)
 
     pub def <&(x: b, p1: JsonReader[a]): JsonReader[b] =
-        p1 *> return(x)
+        p1 *> point(x)
 
     pub def &>(p1: JsonReader[a], x: b): JsonReader[b] =
-        p1 *> return(x)
+        p1 *> point(x)
 
     /// Flipped <&>
     pub def <&&>(p2: JsonReader[a], f: a -> b): JsonReader[b] =
@@ -209,39 +215,39 @@ namespace BasicJson/JsonReader {
 
     pub def getNull(): JsonReader[Unit] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonNull => Ok()
+            case JsonNull => Ok() as & Impure
             case _ => Err("getNull")
         })
 
     pub def getBool(): JsonReader[Bool] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonBool(b) => Ok(b)
+            case JsonBool(b) => Ok(b) as & Impure
             case _ => Err("getBool")
         })
 
     pub def getString(): JsonReader[String] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonString(s) => Ok(s)
+            case JsonString(s) => Ok(s) as & Impure
             case _ => Err("getString")
         })
 
     /// Reads both ints and floats
     pub def getNumber(): JsonReader[Float64] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonFloat(d) => Ok(d)
+            case JsonFloat(d) => Ok(d) as & Impure
             case JsonInt(i) => Ok(Int64.toFloat64(i))
             case _ => Err("getNumber")
         })
 
     pub def getFloat(): JsonReader[Float64] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonFloat(d) => Ok(d)
+            case JsonFloat(d) => Ok(d) as & Impure
             case _ => Err("getNumber")
         })
 
     pub def getInteger(): JsonReader[Int64] = 
         JsonReader(jsv  -> match jsv {
-            case JsonInt(i) => Ok(i)
+            case JsonInt(i) => Ok(i) as & Impure
             case _ => Err("getInteger")
         })
 
@@ -277,7 +283,7 @@ namespace BasicJson/JsonReader {
     def withArrayHelper(ma: JsonReader[a], 
                         xs: List[JsonValue], 
                         fk: String-> Result[List[a], String], 
-                        sk: List[a] -> Result[List[a], String]): Result[List[a], String] = 
+                        sk: List[a] -> Result[List[a], String]): Result[List[a], String] & Impure = 
         match xs { 
             case Nil => sk(Nil)
             case x :: rs => match apply1(ma, x) { 
@@ -304,7 +310,7 @@ namespace BasicJson/JsonReader {
         liftOption(Time/LocalDateTime.parse(formatter, s), "localDateTime - parse error")
 
     pub def satisfy(test: JsonValue -> Bool): JsonReader[JsonValue] = 
-        JsonReader(jsv  -> if (test(jsv)) Ok(jsv) else Err("satisfy"))
+        JsonReader(jsv  -> if (test(jsv)) (Ok(jsv) as & Impure) else Err("satisfy"))
 
     /// TODO - which Parsec style combinators are useful, especially if we anticipate
     /// "semi-structured" reading / traversal?

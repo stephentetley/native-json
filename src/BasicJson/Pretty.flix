@@ -41,12 +41,12 @@ namespace BasicJson/Pretty {
 
     def ppValue(x: JsonValue, cont: Doc -> Doc): Doc = match x {
         case JsonObject(nvs) => ppObject(nvs, cont)
-        case JsonArray(xs) => ppArray(xs, cont)
-        case JsonString(s) => cont(ppString(s))
-        case JsonFloat(d) => cont(ppFloat(d))
-        case JsonInt(d) => cont(ppInt(d))
-        case JsonBool(b) => cont(ppBoolean(b))
-        case JsonNull => cont(ppNull())
+        case JsonArray(xs)   => ppArray(xs, cont)
+        case JsonString(s)   => cont(ppString(s))
+        case JsonFloat(d)    => cont(ppFloat(d))
+        case JsonInt(d)      => cont(ppInt(d))
+        case JsonBool(b)     => cont(ppBoolean(b))
+        case JsonNull        => cont(ppNull())
     }
 
 
@@ -58,9 +58,9 @@ namespace BasicJson/Pretty {
 
     pub def ppFloat(d: Float64): Doc = 
         match d {
-            case x if Float64.isNan(x) => ppString("NaN")
+            case x if Float64.isNan(x)        => ppString("NaN")
             case x if not Float64.isFinite(x) => ppString("Infinity")
-            case _ => float64(d)
+            case _                            => float64(d)
         }
 
     pub def ppInt(n: Int64): Doc = int64(n)
@@ -80,11 +80,11 @@ namespace BasicJson/Pretty {
         use BasicJson/Internal/Utils.{int32ToHexString};
         let toHex = ch -> Char.toInt32(ch) |> int32ToHexString |> String.padLeft(4, '0');
         match c { 
-            case '\\' => writeString("\\\\")
-            case '/' => writeString("\\/")
-            case '"' => writeChar('\\') *> writeChar('"')
+            case '\\'                   => writeString("\\\\")
+            case '/'                    => writeString("\\/")
+            case '"'                    => writeChar('\\') *> writeChar('"')
             case cc if isISOControl(cc) => writeString("\\u${toHex(cc)}")
-            case _ => writeChar(c)
+            case _                      => writeChar(c)
         }
 
 
@@ -94,13 +94,13 @@ namespace BasicJson/Pretty {
 
     def ppObject(kvs: Map[String, JsonValue], cont: Doc -> Doc): Doc = 
         match Map.toList(kvs) {
-            case Nil => cont(lbrace() <!> rbrace())
+            case Nil      => cont(lbrace() <!> rbrace())
             case x1 :: rs => ppField(x1, v1 -> ppFieldsRest(rs, vs -> cont(hang(2, group(lbrace() <!> v1) <> vs <!> rbrace()))))
         }
     
     /// One field aready printed so start with a comma...
     def ppFieldsRest(xs: List[(String, JsonValue)], cont: Doc -> Doc): Doc = match xs { 
-        case Nil => cont(empty())
+        case Nil       => cont(empty())
         case x1 :: Nil => ppField(x1, v1 -> cont(comma() <!> v1))
         case x1 :: rs => 
             ppField(x1, v1 -> 
@@ -115,7 +115,7 @@ namespace BasicJson/Pretty {
             cont(d1)})
 
     def ppArray(xs: List[JsonValue], cont: Doc -> Doc): Doc = match xs { 
-        case Nil => cont(lbracket() <> rbracket())
+        case Nil      => cont(lbracket() <> rbracket())
         case x1 :: rs => 
             ppValue(x1, v1 -> 
                 ppArrayRest(rs, vs -> cont(hang(2, (group(lbracket() <!> v1) <!> vs <!> rbracket())))))
@@ -123,9 +123,9 @@ namespace BasicJson/Pretty {
 
     /// One field aready printed so start with a comma...
     def ppArrayRest(xs: List[JsonValue], cont: Doc -> Doc): Doc = match xs { 
-        case Nil => cont(empty())
+        case Nil       => cont(empty())
         case x1 :: Nil => ppValue(x1, v1 -> cont(comma() <!> v1))
-        case x1 :: rs => 
+        case x1 :: rs  => 
             ppValue(x1, v1 -> 
                 ppArrayRest(rs, vs -> 
                     cont(comma() <!>  v1 <> vs)))

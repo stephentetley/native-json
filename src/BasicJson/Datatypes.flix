@@ -21,7 +21,7 @@ namespace BasicJson {
     /// See - https://www.json.org/json-en.html
     /// Files must be UTF-8
 
-    pub enum JsonValue { 
+    pub enum JsonValue with Eq, Order { 
         case JsonObject(Map[String, JsonValue])
         case JsonArray(List[JsonValue])
         case JsonString(String)
@@ -52,13 +52,13 @@ namespace BasicJson/Datatypes {
         use BasicJson/Internal/StringWriter.{*>};
         match x { 
             case JsonObject(kvs) => writeString("JsonObject") *> writeParens(true, writesMap(kvs))
-            case JsonArray(xs) => writeString("JsonArray") *> writeParens(true, writesList(xs))
-            case JsonString(s) => writeString("JsonString") *> writeParens(true, writeString(s))
-            case JsonFloat(d) => writeString("JsonFloat") *> writeParens(true, writes(d))
-            case JsonInt(n) => writeString("JsonInt") *> writeParens(true, writes(n))
-            case JsonBool(b) => writeString("JsonBool") *> writeParens(true, if (b) writeString("true") else writeString("false"))
-            case JsonNull => writeString("JsonNull")
-            case _ => bug!("BasicJson/Datatypes.writeToString - match fail")
+            case JsonArray(xs)   => writeString("JsonArray")  *> writeParens(true, writesList(xs))
+            case JsonString(s)   => writeString("JsonString") *> writeParens(true, writeString(s))
+            case JsonFloat(d)    => writeString("JsonFloat")  *> writeParens(true, writes(d))
+            case JsonInt(n)      => writeString("JsonInt")    *> writeParens(true, writes(n))
+            case JsonBool(b)     => writeString("JsonBool")   *> writeParens(true, if (b) writeString("true") else writeString("false"))
+            case JsonNull        => writeString("JsonNull")
+            case _               => bug!("BasicJson/Datatypes.writeToString - match fail")
         }
 
 }
