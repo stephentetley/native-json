@@ -18,28 +18,37 @@ namespace BasicJson {
     
     /// This is Impure so we aren't casting to Pure.
     /// Ideally we would track `ef` in the type.
-    pub opaque type JsonReader[a] = BasicJson.JsonValue -> Result[a, String] & Impure
+    /// JsonReader has a simple but useful notion of scope - if you are reading
+    /// a JSON object the only primitive reader you can use is`getFieldWith`.
+    pub opaque type JsonReader[_scope, a] = BasicJson.JsonValue -> Result[a, String] & Impure
 
-    instance Functor[JsonReader] {
-        pub def map(f: a -> b & ef, x: JsonReader[a]): JsonReader[b] & ef = 
+    pub enum JsObject {}
+    pub enum JsValue {}
+
+    instance Functor[JsonReader[scope]] {
+        pub def map(f: a -> b & ef, x: JsonReader[scope, a]): JsonReader[scope, b] & ef = 
           BasicJson/JsonReader.map(f, x)  
     }
 
-    instance Applicative[JsonReader] {
-        pub def point(x: a): JsonReader[a] = BasicJson/JsonReader.point(x)
+    instance Applicative[JsonReader[scope]] {
+        pub def point(x: a): JsonReader[scope, a] = BasicJson/JsonReader.point(x)
 
-        pub def ap(mf: JsonReader[a -> b & ef], ma: JsonReader[a]): JsonReader[b] & ef =
+        pub def ap(mf: JsonReader[scope, a -> b & ef], ma: JsonReader[scope, a]): JsonReader[scope, b] & ef =
             BasicJson/JsonReader.ap(mf, ma)
     }
 
-    instance Monad[JsonReader] {
-        pub def flatMap(f: a -> JsonReader[b] & ef, ma: JsonReader[a]): JsonReader[b] & ef =
+    instance Monad[JsonReader[scope]] {
+        pub def flatMap(f: a -> JsonReader[scope, b] & ef, ma: JsonReader[scope, a]): JsonReader[scope, b] & ef =
             BasicJson/JsonReader.flatMap(f, ma)
     }
 
 }    
 
 namespace BasicJson/JsonReader {
+
+    use BasicJson.JsObject;
+    use BasicJson.JsValue;
+
 
     use BasicJson.JsonReader;
     use BasicJson.JsonReader.{JsonReader};
@@ -48,39 +57,40 @@ namespace BasicJson/JsonReader {
     use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonFloat, JsonInt, JsonBool, JsonNull};
 
-    def apply1(ma: JsonReader[a], jsv: JsonValue): Result[a, String] & Impure = 
+
+    def apply1(ma: JsonReader[scope, a], jsv: JsonValue): Result[a, String] & Impure = 
         let JsonReader(x1) = ma;
         x1(jsv)
 
-    pub def runJsonReader(ma: JsonReader[a], jsv: JsonValue): Result[a, String] & Impure = apply1(ma, jsv)
+    pub def runJsonReader(ma: JsonReader[scope, a], jsv: JsonValue): Result[a, String] & Impure = apply1(ma, jsv)
     
-    pub def readJsonFile(ma: JsonReader[a], path: System.FilePath): Result[a, String] & Impure = 
+    pub def readJsonFile(ma: JsonReader[scope, a], path: System.FilePath): Result[a, String] & Impure = 
         use Result.{flatMap};
         let* jsv = BasicJson/Parser.parseJsonFile(4, path);
         runJsonReader(ma, jsv)
 
-    pub def point(x: a): JsonReader[a] = 
+    pub def point(x: a): JsonReader[scope, a] = 
         JsonReader(_ -> Ok(x) as & Impure)
 
-    pub def throwError(msg: String): JsonReader[a] =
+    pub def throwError(msg: String): JsonReader[scope, a] =
         JsonReader(_ -> Err(msg) as & Impure)
 
-    pub def fail(message: String) : JsonReader[a] = throwError(message)
+    pub def fail(message: String) : JsonReader[scope, a] = throwError(message)
 
-    pub def catchError(ma: JsonReader[a], handle: String -> JsonReader[a]): JsonReader[a] =
+    pub def catchError(ma: JsonReader[scope, a], handle: String -> JsonReader[scope, a]): JsonReader[scope, a] =
         JsonReader(jsv -> match apply1(ma, jsv) { 
             case Ok(a) => Ok(a)
             case Err(e) => apply1(handle(e), jsv)
         })
 
-    pub def mapError(f: String -> String, ma: JsonReader[a]): JsonReader[a] =
+    pub def mapError(f: String -> String, ma: JsonReader[scope, a]): JsonReader[scope, a] =
         JsonReader(jsv -> match apply1(ma, jsv) { 
             case Ok(a) => Ok(a)
             case Err(e) => Err(f(e))
         })
 
     /// Needs to allow allow effects (e.g create / access arrays)
-    pub def map(fn: a -> b & ef, ma: JsonReader[a]): JsonReader[b] & ef = 
+    pub def map(fn: a -> b & ef, ma: JsonReader[scope, a]): JsonReader[scope, b] & ef = 
         JsonReader(jsv -> 
             match apply1(ma, jsv) { 
                 case Ok(a) => { let ans = fn(a) as & Impure; Ok(ans) }
@@ -88,7 +98,7 @@ namespace BasicJson/JsonReader {
             }
         ) as & ef
 
-    pub def ap(mf: JsonReader[a -> b & ef], ma: JsonReader[a]): JsonReader[b] & ef = 
+    pub def ap(mf: JsonReader[scope, a -> b & ef], ma: JsonReader[scope, a]): JsonReader[scope, b] & ef = 
         JsonReader(jsv -> 
             match apply1(mf, jsv) { 
                 case Ok(f) => match apply1(ma, jsv) { 
@@ -101,7 +111,7 @@ namespace BasicJson/JsonReader {
 
 
 
-    pub def bind(ma: JsonReader[a], fn: a -> JsonReader[b] & ef): JsonReader[b] & ef= 
+    pub def bind(ma: JsonReader[scope, a], fn: a -> JsonReader[scope, b] & ef): JsonReader[scope, b] & ef= 
         JsonReader(jsv -> 
             match apply1(ma, jsv) { 
                 case Ok(a) => apply1(fn(a) as & Impure, jsv) 
@@ -109,21 +119,21 @@ namespace BasicJson/JsonReader {
             }
         ) as & ef
 
-    pub def flatMap(fn: a -> JsonReader[b] & ef, ma: JsonReader[a]): JsonReader[b] & ef = bind(ma, fn)
+    pub def flatMap(fn: a -> JsonReader[scope, b] & ef, ma: JsonReader[scope, a]): JsonReader[scope, b] & ef = bind(ma, fn)
 
 
-    pub def liftOption(x: Option[a], errMsg: String): JsonReader[a] =  match x {
+    pub def liftOption(x: Option[a], errMsg: String): JsonReader[scope, a] =  match x {
         case Some(a) => point(a)
         case None    => fail(errMsg)
     }
 
-    pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): JsonReader[a] =  match x {
+    pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): JsonReader[scope, a] =  match x {
         case Ok(a) => point(a)
         case Err(e) => fail(makeErrMsg(e))
     }
 
 
-    pub def alt(ma: JsonReader[a], mb: JsonReader[a]): JsonReader[a] =
+    pub def alt(ma: JsonReader[scope, a], mb: JsonReader[scope, a]): JsonReader[scope, a] =
         JsonReader(jsv -> 
             match apply1(ma, jsv) { 
                 case Ok(a) => Ok(a)
@@ -131,20 +141,26 @@ namespace BasicJson/JsonReader {
             }
         )
 
-    pub def optional(ma: JsonReader[a]): JsonReader[Option[a]] = 
+    pub def optional(ma: JsonReader[scope, a]): JsonReader[scope, Option[a]] = 
         alt(map(Some, ma), point(None))
 
-    pub def getWithDefault(ma: JsonReader[a], d: a): JsonReader[a] = 
+    pub def getWithDefault(ma: JsonReader[scope, a], d: a): JsonReader[scope, a] = 
         alt(ma, point(d))
 
 
-    pub def <!>(p1: JsonReader[a], p2: JsonReader[a]): JsonReader[a] =
+    pub def <!>(p1: JsonReader[scope, a], p2: JsonReader[scope, a]): JsonReader[scope, a] =
         alt(p1, p2)
 
 
     /// ## Elemetary Readers
 
-    pub def withField(name: String, ma: JsonReader[a]): JsonReader[a] = 
+    pub def getObjectWith(ma: JsonReader[JsObject, a]): JsonReader[JsValue, a] = 
+        JsonReader(jsv  -> match jsv { 
+            case JsonObject(_) => apply1(ma, jsv)
+            case _ => Err("getObjectWith - not an object")
+        })
+
+    pub def getFieldWith(name: String, ma: JsonReader[JsValue, a]): JsonReader[JsObject, a] = 
         JsonReader(jsv  -> match jsv { 
             case JsonObject(kvs) => match Map.get(name, kvs) {
                 case Some(jsv) => apply1(ma, jsv)
@@ -154,74 +170,71 @@ namespace BasicJson/JsonReader {
         })
 
 
-    pub def getNull(): JsonReader[Unit] = 
+    pub def getNull(): JsonReader[JsValue, Unit] = 
         JsonReader(jsv  -> match jsv { 
             case JsonNull => Ok() as & Impure
             case _ => Err("getNull")
         })
 
-    pub def getBool(): JsonReader[Bool] = 
+    pub def getBool(): JsonReader[JsValue, Bool] = 
         JsonReader(jsv  -> match jsv { 
             case JsonBool(b) => Ok(b) as & Impure
             case _ => Err("getBool")
         })
 
-    pub def getString(): JsonReader[String] = 
+    pub def getString(): JsonReader[JsValue, String] = 
         JsonReader(jsv  -> match jsv { 
             case JsonString(s) => Ok(s) as & Impure
             case _ => Err("getString")
         })
 
     /// Reads both ints and floats
-    pub def getNumber(): JsonReader[Float64] = 
+    pub def getNumber(): JsonReader[JsValue, Float64] = 
         JsonReader(jsv  -> match jsv { 
             case JsonFloat(d) => Ok(d) as & Impure
             case JsonInt(i) => Ok(Int64.toFloat64(i))
             case _ => Err("getNumber")
         })
 
-    pub def getFloat(): JsonReader[Float64] = 
+    pub def getFloat(): JsonReader[JsValue, Float64] = 
         JsonReader(jsv  -> match jsv { 
             case JsonFloat(d) => Ok(d) as & Impure
             case _ => Err("getNumber")
         })
 
-    pub def getInteger(): JsonReader[Int64] = 
+    pub def getInteger(): JsonReader[JsValue, Int64] = 
         JsonReader(jsv  -> match jsv {
             case JsonInt(i) => Ok(i) as & Impure
             case _ => Err("getInteger")
         })
 
-    
-
-
-    pub def getInt8(): JsonReader[Int8] =
+    pub def getInt8(): JsonReader[JsValue, Int8] =
         let* n = getInteger();
         liftOption(Int64.tryToInt8(n), "getInt8 - out of Int32 range")
 
-    pub def getInt16(): JsonReader[Int16] =
+    pub def getInt16(): JsonReader[JsValue, Int16] =
         let* n = getInteger();
         liftOption(Int64.tryToInt16(n), "getInt16 - out of Int32 range")
 
-    pub def getInt32(): JsonReader[Int32] = 
+    pub def getInt32(): JsonReader[JsValue, Int32] = 
         let* n = getInteger();
         liftOption(Int64.tryToInt32(n), "getInt32 - out of Int32 range")
 
-    pub def getInt64(): JsonReader[Int64] = getInteger()
+    pub def getInt64(): JsonReader[JsValue, Int64] = getInteger()
 
-    pub def getFloat32(): JsonReader[Float32] = 
+    pub def getFloat32(): JsonReader[JsValue, Float32] = 
         let* n = getNumber();
         liftOption(Float64.tryToFloat32(n), "getFloat32 - out of Float32 range")
 
-    pub def getFloat64(): JsonReader[Float64] = getNumber()
+    pub def getFloat64(): JsonReader[JsValue, Float64] = getNumber()
     
-    pub def withArray(ma: JsonReader[a]): JsonReader[List[a]] = 
+    pub def getArrayWith(ma: JsonReader[JsValue, a]): JsonReader[JsValue, List[a]] = 
         JsonReader(jsv  -> match jsv {
             case JsonArray(xs) => withArrayHelper(ma, xs, msg -> Err(msg), ks -> Ok(ks))
             case _ => Err("withArray")
         })
 
-    def withArrayHelper(ma: JsonReader[a], 
+    def withArrayHelper(ma: JsonReader[scope, a], 
                         xs: List[JsonValue], 
                         fk: String-> Result[List[a], String], 
                         sk: List[a] -> Result[List[a], String]): Result[List[a], String] & Impure = 
@@ -234,23 +247,24 @@ namespace BasicJson/JsonReader {
 
         }
 
-    pub def filePath(): JsonReader[System.FilePath] = 
+    pub def filePath(): JsonReader[JsValue, System.FilePath] = 
         map(System/FilePath.new, getString())
 
     /// Date is a JsonString
-    pub def localDate(formatter: Time/Format.DateFormatter): JsonReader[Time.LocalDate] = 
+    pub def localDate(formatter: Time/Format.DateFormatter): JsonReader[JsValue, Time.LocalDate] = 
         let* s = getString();
         liftOption(Time/LocalDate.parse(formatter, s), "localDate - parse error")
 
-    pub def localTime(formatter: Time/Format.TimeFormatter): JsonReader[Time.LocalTime] = 
+    pub def localTime(formatter: Time/Format.TimeFormatter): JsonReader[JsValue, Time.LocalTime] = 
         let* s = getString();
         liftOption(Time/LocalTime.parse(formatter, s), "localTime - parse error")
 
-    pub def localDateTime(formatter: Time/Format.DateTimeFormatter): JsonReader[Time.LocalDateTime] = 
+    pub def localDateTime(formatter: Time/Format.DateTimeFormatter): JsonReader[JsValue, Time.LocalDateTime] = 
         let* s = getString();
         liftOption(Time/LocalDateTime.parse(formatter, s), "localDateTime - parse error")
 
-    pub def satisfy(test: JsonValue -> Bool): JsonReader[JsonValue] = 
+
+    pub def satisfy(test: JsonValue -> Bool): JsonReader[scope, JsonValue] = 
         JsonReader(jsv  -> if (test(jsv)) (Ok(jsv) as & Impure) else Err("satisfy"))
 
     /// TODO - which Parsec style combinators are useful, especially if we anticipate
