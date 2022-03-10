@@ -25,6 +25,18 @@ namespace BasicJson {
           BasicJson/JsonReader.map(f, x)  
     }
 
+    instance Applicative[JsonReader] {
+        pub def point(x: a): JsonReader[a] = BasicJson/JsonReader.point(x)
+
+        pub def ap(mf: JsonReader[a -> b & ef], ma: JsonReader[a]): JsonReader[b] & ef =
+            BasicJson/JsonReader.ap(mf, ma)
+    }
+
+    instance Monad[JsonReader] {
+        pub def flatMap(f: a -> JsonReader[b] & ef, ma: JsonReader[a]): JsonReader[b] & ef =
+            BasicJson/JsonReader.flatMap(f, ma)
+    }
+
 }    
 
 namespace BasicJson/JsonReader {
@@ -87,24 +99,6 @@ namespace BasicJson/JsonReader {
             }
         ) as & ef
 
-    pub def seqLeft(ma: JsonReader[a], mb: JsonReader[b]): JsonReader[a] = 
-        JsonReader(jsv -> 
-            match apply1(ma, jsv) { 
-                case Ok(a) => match apply1(mb, jsv) {
-                    case Ok(_) => Ok(a)
-                    case Err(e) => Err(e)
-                }
-                case Err(e) => Err(e)
-            }
-        )
-
-    pub def seqRight(ma: JsonReader[a], mb: JsonReader[b]): JsonReader[b] = 
-        JsonReader(jsv -> 
-            match apply1(ma, jsv) { 
-                case Ok(_) => apply1(mb, jsv)
-                case Err(e) => Err(e)
-            }
-        )
 
 
     pub def bind(ma: JsonReader[a], fn: a -> JsonReader[b] & ef): JsonReader[b] & ef= 
@@ -117,16 +111,6 @@ namespace BasicJson/JsonReader {
 
     pub def flatMap(fn: a -> JsonReader[b] & ef, ma: JsonReader[a]): JsonReader[b] & ef = bind(ma, fn)
 
-    pub def kleisliLeft(f1: a -> JsonReader[b], f2: b -> JsonReader[c], x: a): JsonReader[c] =
-        JsonReader(jsv -> 
-            match apply1(f1(x), jsv) { 
-                case Ok(b) => apply1(f2(b), jsv)
-                case Err(e) => Err(e)
-            }
-        )
-
-    pub def kleisliRight(f1: b -> JsonReader[c], f2: a -> JsonReader[b], x: a): JsonReader[c] =
-        kleisliLeft(f2, f1, x)
 
     pub def liftOption(x: Option[a], errMsg: String): JsonReader[a] =  match x {
         case Some(a) => point(a)
@@ -153,53 +137,10 @@ namespace BasicJson/JsonReader {
     pub def getWithDefault(ma: JsonReader[a], d: a): JsonReader[a] = 
         alt(ma, point(d))
 
-    /// Alias for `seqRight`
-    pub def *>(p1: JsonReader[a], p2: JsonReader[b]): JsonReader[b] = 
-        seqRight(p1, p2)
-
-    /// Alias for `seqLeft`
-    pub def <*(p1: JsonReader[a], p2: JsonReader[b]): JsonReader[a] = 
-        seqLeft(p1, p2)
 
     pub def <!>(p1: JsonReader[a], p2: JsonReader[a]): JsonReader[a] =
         alt(p1, p2)
 
-    // Haskell's <$>
-    pub def <&>(f: a -> b, p2: JsonReader[a]): JsonReader[b] =
-        map(f, p2)
-
-    pub def <&(x: b, p1: JsonReader[a]): JsonReader[b] =
-        p1 *> point(x)
-
-    pub def &>(p1: JsonReader[a], x: b): JsonReader[b] =
-        p1 *> point(x)
-
-    /// Flipped <&>
-    pub def <&&>(p2: JsonReader[a], f: a -> b): JsonReader[b] =
-        map(f, p2)
-
-
-    // Haskell's ap <*>
-    pub def <*>(mf: JsonReader[a -> b], p2: JsonReader[a]): JsonReader[b] =
-        ap(mf, p2)
-
-    /// Flipped <*>
-    pub def <**>(p2: JsonReader[a], mf: JsonReader[a -> b]): JsonReader[b] =
-        ap(mf, p2)        
-
-
-    pub def >>=(p: JsonReader[a], k: a -> JsonReader[b]): JsonReader[b] =
-        bind(p, k)
-
-
-    pub def =<<(k: a -> JsonReader[b], p: JsonReader[a]): JsonReader[b] =
-        bind(p, k)
-
-    pub def >=>(f1: a -> JsonReader[b], f2: b -> JsonReader[c], x: a): JsonReader[c] =
-        kleisliLeft(f1, f2, x)
-
-    pub def <=<(f1: b -> JsonReader[c], f2: a -> JsonReader[b], x: a): JsonReader[c] = 
-        kleisliRight(f1, f2, x)
 
     /// ## Elemetary Readers
 
