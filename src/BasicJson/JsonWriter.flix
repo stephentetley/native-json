@@ -17,14 +17,59 @@
 namespace BasicJson {
     
     use BasicJson.JsValue;
+    use BasicJson/Internal/ContState.ContState;
+    use BasicJson/Internal/ContState.ContState.{ContState};
 
-    pub opaque type JsonWriter[a] = Chain[JsonValue] -> (Chain[JsonValue], a) & Impure
+    /// TODO would aliases be better, then we don't have to worry about choosing
+    /// which flatMap? ...
+    /// 
+    ///     pub type alias JsonWriter[ka, a] = ContState[ka, Chain[JsonValue], a]
+    ///     pub type alias JsonObjectWriter[ka, a] = ContState[ka, Map[String, JsonValue], a]
+    ///
+
+    pub opaque type JsonWriter[ka, a] = ContState[ka, Chain[JsonValue], a]
     
-    pub opaque type JsonObjectWriter[a] = Map[String, JsonValue] -> (Map[String, JsonValue], a) & Impure
+    instance Functor[JsonWriter[ka]] {
+        pub def map(fn: a -> b & ef, ma: JsonWriter[ka, a]): JsonWriter[ka, b] & ef = 
+            let JsonWriter(ma1) = ma;
+            JsonWriter(Functor.map(fn, ma1))
+    }
 
-    instance Functor[JsonObjectWriter] {
-        pub def map(fn: a -> b & ef, ma: JsonObjectWriter[a]): JsonObjectWriter[b] & ef = 
-            BasicJson/JsonObjectWriter.map(fn, ma)  
+    instance Applicative[JsonWriter[ka]] {
+        pub def point(x: a): JsonWriter[ka, a] = JsonWriter(Applicative.point(x))
+
+        pub def ap(mf: JsonWriter[ka, a -> b & ef], ma: JsonWriter[ka, a]): JsonWriter[ka, b] & ef = 
+            let JsonWriter(mf1) = mf;
+            let JsonWriter(ma1) = ma;
+            JsonWriter(Applicative.ap(mf1, ma1))
+    }
+
+    instance Monad[JsonWriter[ka]] {
+        pub def flatMap(k: a -> JsonWriter[ka, b] & ef, ma: JsonWriter[ka, a]): JsonWriter[ka, b] & ef = 
+            let JsonWriter(ma1) = ma;
+            JsonWriter(Monad.flatMap(a -> {let JsonWriter(ans) = k(a); ans}, ma1))
+    }
+
+    pub opaque type JsonObjectWriter[ka, a] = ContState[ka, Map[String, JsonValue], a]
+
+    instance Functor[JsonObjectWriter[ka]] {
+        pub def map(fn: a -> b & ef, ma: JsonObjectWriter[ka, a]): JsonObjectWriter[ka, b] & ef = 
+            let JsonObjectWriter(ma1) = ma;
+            JsonObjectWriter(Functor.map(fn, ma1))
+    }
+
+    instance Applicative[JsonObjectWriter[ka]] {
+        pub def point(x: a): JsonObjectWriter[ka, a] = JsonObjectWriter(Applicative.point(x))
+
+        pub def ap(mf: JsonObjectWriter[ka, a -> b & ef], ma: JsonObjectWriter[ka, a]): JsonObjectWriter[ka, b] & ef = 
+            let JsonObjectWriter(mf1) = mf;
+            let JsonObjectWriter(ma1) = ma;
+            JsonObjectWriter(Applicative.ap(mf1, ma1))
+    }
+
+    instance Monad[JsonObjectWriter[ka]] {
+        pub def flatMap(k: a -> JsonObjectWriter[ka, b] & ef, ma: JsonObjectWriter[ka, a]): JsonObjectWriter[ka, b] & ef = 
+            BasicJson/JsonObjectWriter.flatMap(k, ma)
     }
 
 }
@@ -33,38 +78,12 @@ namespace BasicJson/JsonObjectWriter {
 
     use BasicJson.JsonObjectWriter;
     use BasicJson.JsonObjectWriter.JsonObjectWriter;
-    use BasicJson.JsonValue;
 
-    def apply1(ma: JsonObjectWriter[a], s: Map[String, JsonValue]): (Map[String, JsonValue], a) & Impure = 
-        let JsonObjectWriter(f) = ma;
-        f(s)
+    pub def flatMap(k: a -> JsonObjectWriter[ka, b] & ef, ma: JsonObjectWriter[ka, a]): JsonObjectWriter[ka, b] & ef = 
+        let JsonObjectWriter(ma1) = ma;
+        JsonObjectWriter(Monad.flatMap(a -> {let JsonObjectWriter(ans) = k(a); ans}, ma1))
 
-    pub def point(x: a): JsonObjectWriter[a] = 
-        JsonObjectWriter(w -> (w, x) as & Impure)
-
-
-    /// Needs to allow allow effects (e.g create / access arrays)
-    pub def map(fn: a -> b & ef, ma: JsonObjectWriter[a]): JsonObjectWriter[b] & ef = 
-        JsonObjectWriter(w -> 
-            let (w1, a) = apply1(ma, w);
-            (w1, fn(a))
-        ) as & ef
-
-    pub def ap(mf: JsonObjectWriter[a -> b & ef], ma: JsonObjectWriter[a]): JsonObjectWriter[b] & ef = 
-        JsonObjectWriter(w -> 
-            let (w1, f) = apply1(mf, w);
-            let (w2, a) = apply1(ma, w1);
-            (w2, f(a) as & Impure)
-        ) as & ef
-
-    pub def bind(ma: JsonObjectWriter[a], fn: a -> JsonObjectWriter[b] & ef): JsonObjectWriter[b] & ef= 
-        JsonObjectWriter(w -> 
-            let (w1, a) = apply1(ma, w);
-            apply1(fn(a) as & Impure, w1)
-        ) as & ef
-
-    pub def flatMap(fn: a -> JsonObjectWriter[b] & ef, ma: JsonObjectWriter[a]): JsonObjectWriter[b] & ef = bind(ma, fn)
-
+    
 }
 
 namespace BasicJson/JsonWriter {
@@ -78,53 +97,61 @@ namespace BasicJson/JsonWriter {
     use BasicJson.JsonValue.{JsonObject, JsonString, JsonBool, JsonArray};
     use BasicJson.MarshalJson;
 
-
-    def apply1(ma: JsonWriter[a], s: Chain[JsonValue]): (Chain[JsonValue], a) & Impure = 
-        let JsonWriter(f) = ma;
-        f(s)
-
-    pub def runJsonWriter(ma: JsonWriter[a]): (JsonValue, a) & Impure =
+    pub def runJsonWriter(ma: JsonWriter[(Chain[BasicJson.JsonValue], a), a]): (JsonValue, a) & Impure =
         use Chain.ViewLeft.{NoneLeft, SomeLeft};
-        let (w, ans) = apply1(ma, Chain.empty());
+        let JsonWriter(ma1) = ma;
+        let (w, ans) = BasicJson/Internal/ContState.runContState(ma1, Chain.empty());
         match Chain.viewLeft(w) {
             case SomeLeft(x, rs) if Chain.isEmpty(rs) => (x, ans)
-            case NoneLeft                             => (JsonArray(Chain.toList(w)), ans)
+            case _                                    => (JsonArray(Chain.toList(w)), ans)
         }
-    
-    def runJsonObjectWriter(ma: JsonObjectWriter[a]): (JsonValue, a) & Impure =
-        let JsonObjectWriter(f) = ma;
-        let (w, ans) = f(Map.empty());
+
+    def runJsonObjectWriter(ma: JsonObjectWriter[(Map[String, BasicJson.JsonValue], a), a]): (JsonValue, a) & Impure =
+        let JsonObjectWriter(ma1) = ma;
+        let (w, ans) = BasicJson/Internal/ContState.runContState(ma1, Map.empty());
         (JsonObject(w), ans)
     
-    
-    pub def putFieldWith(name: String, ma: JsonWriter[a]): JsonObjectWriter[a] =
-        JsonObjectWriter(w ->
-            let (w1, a) = runJsonWriter(ma);
-            (Map.insert(name, w1, w), a)
-        )
+    pub def putFieldWith(name: String, ma: JsonWriter[(Chain[BasicJson.JsonValue], a), a]): JsonObjectWriter[ka, a] & Impure =
+        use Applicative.{*>, point};
+        let (w1, ans) = runJsonWriter(ma);
+        JsonObjectWriter(BasicJson/Internal/ContState.update(s -> Map.insert(name, w1, s)) *> point(ans))
+        
 
-    /// pub def arrayOf(xs: List[a]): JsonValue with MarshalJson[a] = 
-    ///     JsonArray(List.map(BasicJson/MarshalJson.toJsonValue, xs))
+    def sequenceAx(xs: t[f[a]]): f[Unit] with Foldable[t], Applicative[f] =
+        Foldable.foldLeft((ac, mx) -> Applicative.productRight(mx, ac), Applicative.point(), xs)
 
 
-    /// pub def arrayOfObject(xs: List[JsObject]): JsonValue = 
-    ///     JsonArray(List.map(objectOf, xs))
+    pub def putObjectWith(ma: JsonObjectWriter[(Map[String, BasicJson.JsonValue], a), a]): JsonWriter[ka, a] & Impure = 
+        use Applicative.{*>, point};
+        let (w1, ans) = runJsonObjectWriter(ma);
+        JsonWriter(BasicJson/Internal/ContState.update(s -> Chain.snoc(s, w1)) *> point(ans))
 
-    pub def putObjectWith(ma: JsonObjectWriter[a]): JsonWriter[a] = 
-        JsonWriter(w ->
-            let (w1, a) = runJsonObjectWriter(ma);
-            (Chain.snoc(w, w1), a)
-        )
+    pub def putArrayWith(xs: List[JsonWriter[(Chain[BasicJson.JsonValue], Unit), Unit]]): JsonWriter[ka, Unit] & Impure = 
+        use Applicative.{*>, point};
+        let (w1, _) = runJsonWriter(sequenceAx(xs));
+        /// runJsonWriter might have reduced w1 to a singleton rather than an array...
+        let w2 = match w1 {
+            case JsonArray(_) => w1
+            case _            => JsonArray(w1 :: Nil)
+        };
+        JsonWriter(BasicJson/Internal/ContState.update(s -> Chain.snoc(s, w2)))
+
+    pub def putArrayValues(xs: List[a]): JsonWriter[ka, Unit] with MarshalJson[a] =
+        let arr = JsonArray(List.map(BasicJson/MarshalJson.toJsonValue, xs));
+        JsonWriter(BasicJson/Internal/ContState.update(w -> Chain.snoc(w, arr)))
+
 
         
-    pub def putBool(b: Bool): JsonWriter[Unit] = 
-        JsonWriter(w -> (Chain.snoc(w, JsonBool(b)), ()) as & Impure)
+    pub def putBool(b: Bool): JsonWriter[ka, Unit] = 
+        JsonWriter(BasicJson/Internal/ContState.update(s -> Chain.snoc(s, JsonBool(b))))
 
-    pub def putString(s: String): JsonWriter[Unit] =
-        JsonWriter(w -> (Chain.snoc(w, JsonString(s)), ()) as & Impure)
 
-    pub def putValue(x: a): JsonWriter[Unit] with MarshalJson[a] =
-        JsonWriter(w -> (Chain.snoc(w, BasicJson/MarshalJson.toJsonValue(x)), ()) as & Impure)
+    pub def putString(s: String): JsonWriter[ka, Unit] =
+        JsonWriter(BasicJson/Internal/ContState.update(w -> Chain.snoc(w, JsonString(s))))
+
+    pub def putValue(x: a): JsonWriter[ka, Unit] with MarshalJson[a] =
+        JsonWriter(BasicJson/Internal/ContState.update(w -> Chain.snoc(w, BasicJson/MarshalJson.toJsonValue(x))))
+
 
 
 }
