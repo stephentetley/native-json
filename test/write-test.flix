@@ -3,7 +3,7 @@ namespace WriteTest {
 
 
     use BasicJson.JsonWriter;
-    
+
 
     @test    
     def test01(): Result[Unit, String] & Impure = 
@@ -15,7 +15,7 @@ namespace WriteTest {
 
 
     def encode(): JsonWriter[ka, Unit] & Impure = 
-        use BasicJson/JsonObjectWriter.{flatMap};
+        use BasicJson/JsonWriter.{flatMap};
         use Applicative.point;
         use BasicJson/JsonWriter.{putArrayWith, putObjectWith, putFieldWith, putString, putValue};
         let putLang = (name, year) -> putObjectWith(
