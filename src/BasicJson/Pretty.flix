@@ -75,8 +75,8 @@ namespace BasicJson/Pretty {
 
 
     def appendChar(c: Char): StringWriter[Unit] = 
-        use BasicJson/Internal/StringWriter.{writeString, writeChar, seqRight};
-        use BasicJson/Internal/StringWriter.{*>};
+        use BasicJson/Internal/StringWriter.{writeString, writeChar};
+        use Applicative.{*>};
         use BasicJson/Internal/Utils.{int32ToHexString};
         let toHex = ch -> Char.toInt32(ch) |> int32ToHexString |> String.padLeft(4, '0');
         match c { 

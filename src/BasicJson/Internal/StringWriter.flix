@@ -20,12 +20,29 @@ namespace BasicJson/Internal {
     /// Impure because the StringBuilder is mutated
     pub opaque type StringWriter[a] = StringBuilder -> a & Impure
 
-    /// TODO use FAM classes
+    instance Functor[StringWriter] {
+        pub def map(f: a -> b & ef, ma: StringWriter[a]): StringWriter[b] & ef = 
+            BasicJson/Internal/StringWriter.map(f, ma)
+    }
+
+    instance Applicative[StringWriter] {
+        pub def point(x: a): StringWriter[a] = BasicJson/Internal/StringWriter.point(x)
+
+        pub def ap(mf: StringWriter[a -> b & ef], ma: StringWriter[a]): StringWriter[b] & ef = 
+            BasicJson/Internal/StringWriter.ap(mf, ma)
+    }
+
+    instance Monad[StringWriter] {
+        pub def flatMap(f: a -> StringWriter[b] & ef, ma: StringWriter[a]): StringWriter[b] & ef =
+            BasicJson/Internal/StringWriter.flatMap(f, ma)
+    }
 
 }
 
 namespace BasicJson/Internal/StringWriter {
-    
+
+    use Applicative.{*>};
+
     use BasicJson/Internal.StringWriter;
     use BasicJson/Internal.StringWriter.{StringWriter};
 
@@ -44,7 +61,7 @@ namespace BasicJson/Internal/StringWriter {
         f(sb)
 
 
-    pub def return(x: a): StringWriter[a] = 
+    pub def point(x: a): StringWriter[a] = 
         StringWriter(_ -> x as & Impure)
 
     /// Needs to allow allow effects (e.g create / access arrays)
@@ -61,17 +78,6 @@ namespace BasicJson/Internal/StringWriter {
             f(a) as & Impure
         ) as & ef
 
-    pub def seqLeft(ma: StringWriter[a], mb: StringWriter[b]): StringWriter[a] = 
-        let* a = ma;
-        let* _ = mb;
-        return(a)
-
-    pub def seqRight(ma: StringWriter[a], mb: StringWriter[b]): StringWriter[b] = 
-        let* _ = ma;
-        let* b = mb;
-        return(b)
-
-
     pub def bind(ma: StringWriter[a], fn: a -> StringWriter[b] & ef): StringWriter[b] & ef= 
         StringWriter(sb -> 
             let a = apply1(ma, sb);
@@ -80,14 +86,13 @@ namespace BasicJson/Internal/StringWriter {
 
     pub def flatMap(fn: a -> StringWriter[b] & ef, ma: StringWriter[a]): StringWriter[b] & ef = bind(ma, fn)
 
-    pub def *>(ma: StringWriter[a], mb: StringWriter[b]): StringWriter[b] = seqRight(ma, mb)
-
+  
 
     pub def writeString(s: String): StringWriter[Unit] = 
-        StringWriter(sb -> StringBuilder.append!(sb, s))
+        StringWriter(StringBuilder.append!(s))
 
     pub def writeChar(c: Char): StringWriter[Unit] = 
-        StringWriter(sb -> StringBuilder.append!(sb, c))
+        StringWriter(StringBuilder.append!(c))
 
     pub def mapX(f: a -> StringWriter[b] & ef, xs: List[a]): StringWriter[Unit] & ef = 
         StringWriter(sb -> 
@@ -117,7 +122,7 @@ namespace BasicJson/Internal/StringWriter {
         writeString("}")
 
     def writesKeyValues(kvs: List[(k, v)]): StringWriter[Unit] with ToString[k], ToString[v] = match kvs {
-        case Nil => return()
+        case Nil => point()
         case x :: rs => {
             let* _ = writesKV(x);
             mapX(xy -> writeString(", ") *> writesKV(xy), rs)
@@ -129,14 +134,14 @@ namespace BasicJson/Internal/StringWriter {
         let* _ = writes(k);
         let* _ = writeString(" -> ");
         let* _ = writes(v);
-        return()
+        point()
 
     pub def writeParens(parens: Bool, ma: StringWriter[a]): StringWriter[a] = 
         if (parens) {
             let* _  = writeChar('(');
             let* a = ma;
             let* _  = writeChar(')');
-            return(a)
+            point(a)
         } 
         else ma
 

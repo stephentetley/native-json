@@ -52,8 +52,8 @@ namespace BasicJson/Datatypes {
     /// TODO is this efficient as it uses `toString` between recursive levels?
     /// TODO should be pure?
     pub def writeToString(x: JsonValue): StringWriter[Unit] = 
-        use BasicJson/Internal/StringWriter.{writeString, writeParens, writes, writesList, writesMap};
-        use BasicJson/Internal/StringWriter.{*>};
+        use Applicative.{*>};
+        use BasicJson/Internal/StringWriter.{writeString, writeParens, writes, writesList, writesMap};        
         match x { 
             case JsonObject(kvs) => writeString("JsonObject") *> writeParens(true, writesMap(kvs))
             case JsonArray(xs)   => writeString("JsonArray")  *> writeParens(true, writesList(xs))
