@@ -20,7 +20,7 @@ namespace BasicJson {
     use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonFloat, JsonInt, JsonBool, JsonNull};
 
-    pub lawless class MarshalJson[a] {
+    pub class MarshalJson[a] {
         pub def toJsonValue(x: a): JsonValue
         pub def fromJsonValue(x: JsonValue): Result[a, String]
     }
