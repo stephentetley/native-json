@@ -48,6 +48,8 @@ namespace BasicJson {
 
 namespace BasicJson/JsonReader {
 
+    use Time/Format.DateTimeFormatter;
+
     use BasicJson.JsObject;
     use BasicJson.JsValue;
 
@@ -129,11 +131,15 @@ namespace BasicJson/JsonReader {
         case None    => fail(errMsg)
     }
 
-    pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): JsonReader[scope, a] =  match x {
+    pub def liftResult(x: Result[a, String]): JsonReader[scope, a] =  match x {
+        case Ok(a) => point(a)
+        case Err(msg) => fail(msg)
+    }
+
+    pub def liftResult1(x: Result[a, e], makeErrMsg: e -> String): JsonReader[scope, a] =  match x {
         case Ok(a) => point(a)
         case Err(e) => fail(makeErrMsg(e))
     }
-
 
     pub def alt(ma: JsonReader[scope, a], mb: JsonReader[scope, a]): JsonReader[scope, a] =
         JsonReader(jsv -> 
@@ -250,20 +256,20 @@ namespace BasicJson/JsonReader {
         }
 
     pub def filePath(): JsonReader[JsValue, FlixSandbox/System.FilePath] = 
-        map(FlixSandbox/System/FilePath.new, getString())
+        map(FlixSandbox/System/FilePath.filePath, getString())
 
     /// Date is a JsonString
-    pub def localDate(formatter: Time/Format.DateFormatter): JsonReader[JsValue, Time.LocalDate] = 
+    pub def localDate(formatter: DateTimeFormatter[Time/Format.DateFormat]): JsonReader[JsValue, Time.LocalDate] = 
         let* s = getString();
-        liftOption(Time/LocalDate.parse(formatter, s), "localDate - parse error")
+        liftResult(Time/LocalDate.parse(formatter, s))
 
-    pub def localTime(formatter: Time/Format.TimeFormatter): JsonReader[JsValue, Time.LocalTime] = 
+    pub def localTime(formatter: DateTimeFormatter[Time/Format.TimeFormat]): JsonReader[JsValue, Time.LocalTime] = 
         let* s = getString();
-        liftOption(Time/LocalTime.parse(formatter, s), "localTime - parse error")
+        liftResult(Time/LocalTime.parse(formatter, s))
 
-    pub def localDateTime(formatter: Time/Format.DateTimeFormatter): JsonReader[JsValue, Time.LocalDateTime] = 
+    pub def localDateTime(formatter: DateTimeFormatter[Time/Format.DateTimeFormat]): JsonReader[JsValue, Time.LocalDateTime] = 
         let* s = getString();
-        liftOption(Time/LocalDateTime.parse(formatter, s), "localDateTime - parse error")
+        liftResult(Time/LocalDateTime.parse(formatter, s))
 
 
     pub def satisfy(test: JsonValue -> Bool): JsonReader[scope, JsonValue] = 

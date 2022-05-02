@@ -11,7 +11,7 @@ namespace ReadTest {
     def test01(): Result[Unit, String] & Impure = 
         use Result.{flatMap};
         use BasicJson/JsonReader.{readJsonFile, getString};
-        let srcpath = FlixSandbox/System/FilePath.new("E:/coding/flix/basic-json/demo/sample.json");
+        let srcpath = FlixSandbox/System/FilePath.filePath("E:/coding/flix/basic-json/demo/sample.json");
         let* ans = readJsonFile(decode(), srcpath);
         let _    = println("${printConfig(ans)}");
         Ok()
@@ -48,7 +48,7 @@ namespace ReadTest {
 
     def filepath(): JsonReader[JsValue, FlixSandbox/System.FilePath] = 
         use BasicJson/JsonReader.{map, getString};
-        map(FlixSandbox/System/FilePath.new, getString())
+        map(FlixSandbox/System/FilePath.filePath, getString())
 
     def excelTable(): JsonReader[JsValue, ExcelTable] = 
         use BasicJson/JsonReader.{getObjectWith, getFieldWith, getString};
