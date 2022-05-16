@@ -53,7 +53,7 @@ namespace BasicJson {
         pub def toJsonValue(x: Int8): JsonValue = JsonInt(Int8.toInt64(x))
 
         pub def fromJsonValue(x: JsonValue): Result[Int8, String] = match x {
-            case JsonInt(d) => Option.toOk(Int64.tryToInt8(d), "Unable to read Int8")
+            case JsonInt(d) => Int64.tryToInt8(d) |> Option.toOk("Unable to read Int8")
             case _          => Err("Unable to read Int8")
         }
     }
@@ -62,7 +62,7 @@ namespace BasicJson {
         pub def toJsonValue(x: Int16): JsonValue = JsonInt(Int16.toInt64(x))
 
         pub def fromJsonValue(x: JsonValue): Result[Int16, String] = match x {
-            case JsonInt(d) => Option.toOk(Int64.tryToInt16(d), "Unable to read Int16")
+            case JsonInt(d) => Int64.tryToInt16(d) |> Option.toOk("Unable to read Int16")
             case _          => Err("Unable to read Int16")
         }
     }
@@ -71,7 +71,7 @@ namespace BasicJson {
         pub def toJsonValue(x: Int32): JsonValue = JsonInt(Int32.toInt64(x))
 
         pub def fromJsonValue(x: JsonValue): Result[Int32, String] = match x {
-            case JsonInt(d) => Option.toOk(Int64.tryToInt32(d), "Unable to read Int32")
+            case JsonInt(d) => Int64.tryToInt32(d) |> Option.toOk("Unable to read Int32")
             case _          => Err("Unable to read Int32")
         }
     }
@@ -89,7 +89,7 @@ namespace BasicJson {
         pub def toJsonValue(x: Float32): JsonValue = JsonFloat(Float32.toFloat64(x))
 
         pub def fromJsonValue(x: JsonValue): Result[Float32, String] = match x {
-            case JsonFloat(d) => Option.toOk(Float64.tryToFloat32(d), "Unable to read Float32")
+            case JsonFloat(d) => Float64.tryToFloat32(d) |> Option.toOk("Unable to read Float32")
             case _            => Err("Unable to read Float32")
         }
     }
