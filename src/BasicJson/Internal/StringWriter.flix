@@ -17,8 +17,9 @@
 /// Experiment with a monadic wrapper over StringBuilder
 
 namespace BasicJson/Internal {
+    
     /// Impure because the StringBuilder is mutated
-    pub opaque type StringWriter[a] = StringBuilder -> a & Impure
+    pub opaque type StringWriter[a: Type] = StringBuilder[static] -> a & Impure
 
     instance Functor[StringWriter] {
         pub def map(f: a -> b & ef, ma: StringWriter[a]): StringWriter[b] & ef = 
@@ -49,14 +50,14 @@ namespace BasicJson/Internal/StringWriter {
     pub def run(ma: StringWriter[a]): (String, a) = runHelper(ma) as & Pure 
     
     def runHelper(ma: StringWriter[a]): (String, a) & Impure = 
-        let sb = StringBuilder.new();
+        let sb = new StringBuilder(static);
         let ans = apply1(ma, sb);
         let s = StringBuilder.toString(sb);
         (s, ans)
 
     pub def exec(ma: StringWriter[a]): String = run(ma) |> fst
 
-    def apply1(ma: StringWriter[a], sb: StringBuilder): a & Impure = 
+    def apply1(ma: StringWriter[a], sb: StringBuilder[static]): a & Impure = 
         let StringWriter(f) = ma;
         f(sb)
 
@@ -99,7 +100,7 @@ namespace BasicJson/Internal/StringWriter {
             mapXHelper(sb, f, xs)
         ) as & ef
 
-    def mapXHelper(sb: StringBuilder, f: a -> StringWriter[b] & ef, xs: List[a]): Unit & Impure = 
+    def mapXHelper(sb: StringBuilder[static], f: a -> StringWriter[b] & ef, xs: List[a]): Unit & Impure = 
         match xs {
             case x :: rs => {
                 let ma = f(x) as & Pure;
