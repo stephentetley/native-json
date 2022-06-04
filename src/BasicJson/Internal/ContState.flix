@@ -27,7 +27,7 @@ namespace BasicJson/Internal/ContState {
     /// We use an Impure continuation so we can internally cast the `ef` of operations and not lose
     /// impurity information.
     ///
-    pub opaque type ContState[ka, s, a] = s -> (a -> s -> ka & Impure) -> ka & Impure
+    pub enum ContState[ka, s, a](s -> (a -> s -> ka & Impure) -> ka & Impure)
 
     ///
     /// Helper function for ContState's implementations of `map` and `ap`.

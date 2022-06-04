@@ -19,7 +19,7 @@
 namespace BasicJson/Internal {
     
     /// Impure because the StringBuilder is mutated
-    pub opaque type StringWriter[a: Type] = StringBuilder[static] -> a & Impure
+    pub enum StringWriter[a: Type](StringBuilder[static] -> a & Impure)
 
     instance Functor[StringWriter] {
         pub def map(f: a -> b & ef, ma: StringWriter[a]): StringWriter[b] & ef = 

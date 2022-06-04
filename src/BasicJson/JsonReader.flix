@@ -20,7 +20,8 @@ namespace BasicJson {
     /// Ideally we would track `ef` in the type.
     /// JsonReader has a simple but useful notion of scope - if you are reading
     /// a JSON object the only primitive reader you can use is`getFieldWith`.
-    pub opaque type JsonReader[_scope, a] = BasicJson.JsonValue -> Result[a, String] & Impure
+    ///
+    pub enum JsonReader[_scope, a](BasicJson.JsonValue -> Result[a, String] & Impure)
 
     /// Note - probably we will need to move to a ContReader monad to handle
     /// large input.
