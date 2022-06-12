@@ -69,12 +69,14 @@ namespace BasicJson/Pretty {
     /// TODO escapes, multiline etc.
     pub def ppString(s: String): Doc = 
         use BasicJson/Internal/StringWriter.{exec, mapX}; 
-        let cs = String.toList(s);
-        let s1 = exec(mapX(appendChar, cs));
-        dquotes(text(s1))       /// TODO - check text is neutral with regards to escape chars
+        region r {
+            let cs = String.toList(s);
+            let s1 = exec(mapX(appendChar, cs), r);
+            dquotes(text(s1))       /// TODO - check text is neutral with regards to escape chars
+        }
 
 
-    def appendChar(c: Char): StringWriter[Unit] = 
+    def appendChar(c: Char): StringWriter[r, Unit] \ Write(r) = 
         use BasicJson/Internal/StringWriter.{writeString, writeChar};
         use Applicative.{*>};
         use BasicJson/Internal/Utils.{int32ToHexString};

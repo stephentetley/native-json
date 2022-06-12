@@ -37,7 +37,9 @@ namespace BasicJson {
 
     instance ToString[JsonValue] {
         pub def toString(x: JsonValue): String = 
-            BasicJson/Internal/StringWriter.exec(BasicJson/Datatypes.writeToString(x))
+            region r {
+                BasicJson/Internal/StringWriter.exec(BasicJson/Datatypes.writeToString(x), r)
+            }
     }
 }
 
@@ -50,8 +52,7 @@ namespace BasicJson/Datatypes {
 
 
     /// TODO is this efficient as it uses `toString` between recursive levels?
-    /// TODO should be pure?
-    pub def writeToString(x: JsonValue): StringWriter[Unit] = 
+    pub def writeToString(x: JsonValue): StringWriter[r, Unit] \ Write(r) = 
         use Applicative.{*>};
         use BasicJson/Internal/StringWriter.{writeString, writeParens, writes, writesList, writesMap};        
         match x { 
