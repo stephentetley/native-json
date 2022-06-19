@@ -172,7 +172,7 @@ namespace BasicJson/JsonReader {
     pub def getFieldWith(name: String, ma: JsonReader[JsValue, a]): JsonReader[JsObject, a] = 
         JsonReader(jsv  -> match jsv { 
             case JsonObject(kvs) => match Map.get(name, kvs) {
-                case Some(jsv) => apply1(ma, jsv)
+                case Some(jsv1) => apply1(ma, jsv1)
                 case None => Err("withField - missing key - '${name}'")
             }
             case _ => Err("withField - not an object")
