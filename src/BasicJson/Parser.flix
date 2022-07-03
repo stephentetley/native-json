@@ -39,7 +39,7 @@ namespace BasicJson/Parser {
 
 
     pub def parseJsonFile(tabSize: Int32, path: FlixSandbox/System.FilePath): Result[JsonValue, String] & Impure =
-        FlixParsec/Extras.parsesFile(pValue(), tabSize, path, FlixSandbox/Text/Charset.utf_8())
+        FlixParsec/Extras.parsesFile(pValue(), tabSize, path, Text/Charset.utf_8())
 
 
     pub def pValue(): Parser[t1, JsonValue] = pValue2()
