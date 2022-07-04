@@ -34,7 +34,7 @@ namespace BasicJson/Parser {
     /// JSON is always UTF-8...
 
 
-    pub def parseJsonString(s: String): Result[JsonValue, String] & Impure =
+    pub def parseJsonString(s: String): Result[JsonValue, String] =
         FlixParsec/Prim.parsesString(pValue(), s)
 
 
