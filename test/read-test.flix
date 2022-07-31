@@ -1,6 +1,8 @@
 
 namespace ReadTest {
 
+    use Interop/System.FilePath;
+
     use BasicJson.JsValue;
     use BasicJson.JsObject;
     use BasicJson.JsonReader;
@@ -11,19 +13,19 @@ namespace ReadTest {
     def test01(): Result[Unit, String] & Impure = 
         use Result.{flatMap};
         use BasicJson/JsonReader.{readJsonFile, getString};
-        let srcpath = FlixSandbox/System/FilePath.filePath("E:/coding/flix/basic-json/demo/sample.json");
+        let srcpath = Interop/System/FilePath.filePath("E:/coding/flix/basic-json/demo/sample.json");
         let* ans = readJsonFile(decode(), srcpath);
         let _    = println("${printConfig(ans)}");
         Ok()
 
     type alias Config = 
-        { uxlTemplate :: FlixSandbox/System.FilePath
+        { uxlTemplate :: FilePath
         , aibHierarchy :: ExcelTable
         , args :: List[String]
         }
 
     type alias ExcelTable = 
-        { file :: FlixSandbox/System.FilePath
+        { file :: FilePath
         , sheet :: String
         }
 
@@ -46,9 +48,9 @@ namespace ReadTest {
 
 
 
-    def filepath(): JsonReader[JsValue, FlixSandbox/System.FilePath] = 
+    def filepath(): JsonReader[JsValue, FilePath] = 
         use BasicJson/JsonReader.{map, getString};
-        map(FlixSandbox/System/FilePath.filePath, getString())
+        map(Interop/System/FilePath.filePath, getString())
 
     def excelTable(): JsonReader[JsValue, ExcelTable] = 
         use BasicJson/JsonReader.{getObjectWith, getFieldWith, getString};

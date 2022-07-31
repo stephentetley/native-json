@@ -1,15 +1,26 @@
 # basic-json
 
-Simple library to read and write JSON files in Flix
+Simple native library to read and write JSON data in Flix.
 
-Dependencies:
+License: Apache 2.0
+
+## Dependencies:
 
 https://github.com/stephentetley/flix-pretty
+
 https://github.com/stephentetley/flix-parsec
+
 https://github.com/stephentetley/flix-regex
+
+https://github.com/stephentetley/flix-time
+
 https://github.com/stephentetley/flix-sandbox
-https://github.com/stephentetley/charset-locale
-https://github.com/stephentetley/collection-interop
+
+https://github.com/stephentetley/interop-filepath
+
+https://github.com/stephentetley/interop-charset-locale
+
+https://github.com/stephentetley/interop-collections
 
 Apache Commons IO
 

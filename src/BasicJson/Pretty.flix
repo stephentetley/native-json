@@ -17,6 +17,8 @@
 
 namespace BasicJson/Pretty {
 
+    use Interop/System.FilePath;
+
     use Text/PrettyPrint.Doc;
     use Text/PrettyPrint.{text, char, dquotes, float64, int64, colon, 
         intersperse, comma, hang, group, lbrace, rbrace, lbracket, rbracket, empty};
@@ -27,9 +29,9 @@ namespace BasicJson/Pretty {
     use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonFloat, JsonInt, JsonBool, JsonNull};
     
-    pub def writeJson(path: FlixSandbox/System.FilePath, value: JsonValue): Result[Unit, String] & Impure =
+    pub def writeJson(path: FilePath, value: JsonValue): Result[Unit, String] & Impure =
         let doc = ppJson(value);
-        Text/PrettyPrint.writePretty(160, path, Text/Charset.utf_8(), doc)
+        Text/PrettyPrint.writePretty(160, path, Interop/Text/Charset.utf_8(), doc)
 
     pub def renderJson(value: JsonValue): String =
         let doc = ppJson(value);

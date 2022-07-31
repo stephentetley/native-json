@@ -51,6 +51,8 @@ namespace BasicJson/JsonReader {
 
     use Time/Format.DateTimeFormatter;
 
+    use Interop/System.FilePath;
+
     use BasicJson.JsObject;
     use BasicJson.JsValue;
 
@@ -69,7 +71,7 @@ namespace BasicJson/JsonReader {
 
     pub def runJsonReader(ma: JsonReader[scope, a], jsv: JsonValue): Result[a, String] & Impure = apply1(ma, jsv)
     
-    pub def readJsonFile(ma: JsonReader[scope, a], path: FlixSandbox/System.FilePath): Result[a, String] & Impure = 
+    pub def readJsonFile(ma: JsonReader[scope, a], path: FilePath): Result[a, String] & Impure = 
         use Result.{flatMap};
         let* jsv = BasicJson/Parser.parseJsonFile(4, path);
         runJsonReader(ma, jsv)
@@ -256,8 +258,8 @@ namespace BasicJson/JsonReader {
 
         }
 
-    pub def filePath(): JsonReader[JsValue, FlixSandbox/System.FilePath] = 
-        map(FlixSandbox/System/FilePath.filePath, getString())
+    pub def filePath(): JsonReader[JsValue, FilePath] = 
+        map(Interop/System/FilePath.filePath, getString())
 
     /// Date is a JsonString
     pub def localDate(formatter: DateTimeFormatter[Time/Format.DateFormat]): JsonReader[JsValue, Time.LocalDate] = 
