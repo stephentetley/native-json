@@ -51,7 +51,7 @@ namespace BasicJson/JsonReader {
 
     use Time/Format.DateTimeFormatter;
 
-    use Interop/System.FilePath;
+    use Basis/System.FilePath;
 
     use BasicJson.JsObject;
     use BasicJson.JsValue;
@@ -259,7 +259,7 @@ namespace BasicJson/JsonReader {
         }
 
     pub def filePath(): JsonReader[JsValue, FilePath] = 
-        map(Interop/System/FilePath.filePath, getString())
+        flatMap(s -> liftResult(Basis/System/FilePath.filePath(s)), getString()) 
 
     /// Date is a JsonString
     pub def localDate(formatter: DateTimeFormatter[Time/Format.DateFormat]): JsonReader[JsValue, Time.LocalDate] = 

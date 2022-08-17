@@ -21,7 +21,7 @@ namespace BasicJson/Parser {
     use Functor.{<$>, <$$>, $>};
     use Applicative.{point};
 
-    use Interop/System.FilePath;
+    use Basis/System.FilePath;
 
     use FlixParsec.Parser;
     use FlixParsec/Prim.{flatMap};
@@ -41,7 +41,7 @@ namespace BasicJson/Parser {
 
 
     pub def parseJsonFile(tabSize: Int32, path: FilePath): Result[JsonValue, String] & Impure =
-        FlixParsec/Extras.parsesFile(pValue(), tabSize, path, Interop/Text/Charset.utf_8())
+        FlixParsec/Extras.parsesFile(pValue(), tabSize, path, Basis/Text/Charset.utf_8())
 
 
     pub def pValue(): Parser[t1, JsonValue] = pValue2()

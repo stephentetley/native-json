@@ -6,22 +6,19 @@ License: Apache 2.0
 
 ## Dependencies:
 
-https://github.com/stephentetley/flix-pretty
-
 https://github.com/stephentetley/flix-parsec
-
-https://github.com/stephentetley/flix-regex
 
 https://github.com/stephentetley/flix-time
 
-https://github.com/stephentetley/flix-sandbox
+https://github.com/stephentetley/flix-pretty
 
-https://github.com/stephentetley/interop-filepath
+https://github.com/stephentetley/flix-regex
 
-https://github.com/stephentetley/interop-charset-locale
+https://github.com/stephentetley/basis-base
 
-https://github.com/stephentetley/interop-collections
+https://github.com/stephentetley/monad-lib
 
-Apache Commons IO
+https://github.com/stephentetley/interop-base
+
 
 Compatible *.pkg and *.jar files are included in the folder `lib`.
