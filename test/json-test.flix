@@ -4,8 +4,8 @@ namespace JsonTest {
 
 @test
 def test01(): Int32 & Impure =
-    use BasicJson/Pretty.{renderJson};
-    BasicJson/MarshalJson.toJsonValue(1000.0f64) |> renderJson |> println;
+    use NativeJson/Pretty.{renderJson};
+    NativeJson/MarshalJson.toJsonValue(1000.0f64) |> renderJson |> println;
     /// renderJson(true, 1000.0001f64) |> println;
     /// renderJson(String.unlines("Hello" :: "World" :: Nil)) |> println;
     0
@@ -17,7 +17,7 @@ def dquote(s: String): String =
 
 @test
 def test02(): Int32 & Impure =
-    use BasicJson/Parser.{pValue};
+    use NativeJson/Parser.{pValue};
     FlixParsec/Prim.parsesString(pValue(), "true") |> println;
     FlixParsec/Prim.parsesString(pValue(), "100.75") |> println;
     FlixParsec/Prim.parsesString(pValue(), "[true, null, 1000, false]") |> println;
@@ -30,8 +30,8 @@ def test02(): Int32 & Impure =
 
 @test
 def test03(): Int32 & Impure =
-    use BasicJson/MarshalJson.toJsonValue;
-    use BasicJson/JsonReader.{runJsonReader, getBool};
+    use NativeJson/MarshalJson.toJsonValue;
+    use NativeJson/JsonReader.{runJsonReader, getBool};
     let js1 = toJsonValue(true);
     runJsonReader(getBool(), js1) |> println;
     0
@@ -39,8 +39,8 @@ def test03(): Int32 & Impure =
 
 @test
 def test04(): Int32 & Impure = 
-    use BasicJson/MarshalJson.toJsonValue;
-    use BasicJson/JsonBuilder.{createObject, putField, arrayOf, objectOf};
+    use NativeJson/MarshalJson.toJsonValue;
+    use NativeJson/JsonBuilder.{createObject, putField, arrayOf, objectOf};
     let record1 = { name = "Flix", year = 2016, paradigms = "functional" :: "logic" :: "imperative" :: Nil };
     let record2 = { name = "Haskell", year = 1990, paradigms = "functional" :: "lazy" :: Nil };
     let writer = x -> 
@@ -48,7 +48,7 @@ def test04(): Int32 & Impure =
             |> putField("name", x.name)
             |> putField("year", x.year)
             |> putField("paradigms", arrayOf(x.paradigms));
-    arrayOf(List.map(writer >> objectOf, record1 :: record2 :: Nil)) |> BasicJson/Pretty.renderJson |> println;
+    arrayOf(List.map(writer >> objectOf, record1 :: record2 :: Nil)) |> NativeJson/Pretty.renderJson |> println;
     0
 
 }

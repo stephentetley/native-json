@@ -15,7 +15,7 @@
  */
 
 
-namespace BasicJson/Internal/Utils {
+namespace NativeJson/Internal/Utils {
 
 
 

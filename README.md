@@ -1,4 +1,4 @@
-# basic-json
+# native-json
 
 Simple native library to read and write JSON data in Flix.
 

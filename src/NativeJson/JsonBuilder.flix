@@ -15,11 +15,11 @@
  */
 
 
-namespace BasicJson/JsonBuilder {
+namespace NativeJson/JsonBuilder {
 
-    use BasicJson.JsonValue;
-    use BasicJson.JsonValue.{JsonObject, JsonArray};
-    use BasicJson.MarshalJson;
+    use NativeJson.JsonValue;
+    use NativeJson.JsonValue.{JsonObject, JsonArray};
+    use NativeJson.MarshalJson;
 
     /// This module is underpowered - maybe we should use a monad so we can have conditional "put", etc.
 
@@ -29,13 +29,13 @@ namespace BasicJson/JsonBuilder {
     pub def createObject(): JsObject = Map.empty()
 
     pub def putField(name: String, value: a, obj: JsObject): JsObject with MarshalJson[a] = 
-        Map.insert(name, BasicJson/MarshalJson.toJsonValue(value), obj)
+        Map.insert(name, NativeJson/MarshalJson.toJsonValue(value), obj)
 
 
     pub def objectOf(x: JsObject): JsonValue = JsonObject(x)
 
     pub def arrayOf(xs: List[a]): JsonValue with MarshalJson[a] = 
-        JsonArray(List.map(BasicJson/MarshalJson.toJsonValue, xs))
+        JsonArray(List.map(NativeJson/MarshalJson.toJsonValue, xs))
 
 
     pub def arrayOfObject(xs: List[JsObject]): JsonValue = 

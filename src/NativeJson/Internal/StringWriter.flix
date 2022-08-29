@@ -18,36 +18,36 @@
 
 /// TODO not stack safe - needs codensity transformation
 
-namespace BasicJson/Internal {
+namespace NativeJson/Internal {
     
     /// Impure because the StringBuilder is mutated
     pub enum StringWriter[r: Region, a: Type](StringBuilder[r] -> a)
 
     instance Functor[StringWriter[r]] {
         pub def map(f: a -> b & ef, ma: StringWriter[r, a]): StringWriter[r, b] & ef = 
-            BasicJson/Internal/StringWriter.map(f, ma)
+            NativeJson/Internal/StringWriter.map(f, ma)
     }
 
     instance Applicative[StringWriter[r]] {
-        pub def point(x: a): StringWriter[r, a] = BasicJson/Internal/StringWriter.point(x)
+        pub def point(x: a): StringWriter[r, a] = NativeJson/Internal/StringWriter.point(x)
 
         pub def ap(mf: StringWriter[r, a -> b & ef], ma: StringWriter[r, a]): StringWriter[r, b] & ef = 
-            BasicJson/Internal/StringWriter.ap(mf, ma)
+            NativeJson/Internal/StringWriter.ap(mf, ma)
     }
 
     instance Monad[StringWriter[r]] {
         pub def flatMap(f: a -> StringWriter[r, b] & ef, ma: StringWriter[r, a]): StringWriter[r, b] & ef =
-            BasicJson/Internal/StringWriter.flatMap(f, ma)
+            NativeJson/Internal/StringWriter.flatMap(f, ma)
     }
 
 }
 
-namespace BasicJson/Internal/StringWriter {
+namespace NativeJson/Internal/StringWriter {
 
     use Applicative.{*>};
 
-    use BasicJson/Internal.StringWriter;
-    use BasicJson/Internal.StringWriter.{StringWriter};
+    use NativeJson/Internal.StringWriter;
+    use NativeJson/Internal.StringWriter.{StringWriter};
 
     pub def run(ma: StringWriter[r, a], r: Region[r]): (String, a) \ Write(r) = 
         let sb = new StringBuilder(r);

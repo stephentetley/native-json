@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-namespace BasicJson {
+namespace NativeJson {
 
-    use BasicJson.JsonValue;
-    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
+    use NativeJson.JsonValue;
+    use NativeJson.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonFloat, JsonInt, JsonBool, JsonNull};
 
     pub class MarshalJson[a] {
@@ -105,10 +105,10 @@ namespace BasicJson {
 
     instance MarshalJson[List[a]] with MarshalJson[a] {
         pub def toJsonValue(xs: List[a]): JsonValue = 
-            JsonArray(List.map(BasicJson/MarshalJson.toJsonValue, xs))
+            JsonArray(List.map(NativeJson/MarshalJson.toJsonValue, xs))
 
         pub def fromJsonValue(x: JsonValue): Result[List[a], String] = match x {
-            case JsonArray(xs) => match Result.traverse(BasicJson/MarshalJson.fromJsonValue, xs) { 
+            case JsonArray(xs) => match Result.traverse(NativeJson/MarshalJson.fromJsonValue, xs) { 
                 case Ok(ys) => Ok(ys)
                 case Err(_) => Err("Unable to read List")
             }

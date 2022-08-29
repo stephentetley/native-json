@@ -3,16 +3,16 @@ namespace ReadTest {
 
     use Basis/System.FilePath;
 
-    use BasicJson.JsValue;
-    use BasicJson.JsObject;
-    use BasicJson.JsonReader;
+    use NativeJson.JsValue;
+    use NativeJson.JsObject;
+    use NativeJson.JsonReader;
     
     /// Warning - hardcoded path
 
     @test    
     def test01(): Result[Unit, String] & Impure = 
         use Result.{flatMap};
-        use BasicJson/JsonReader.{readJsonFile, getString};
+        use NativeJson/JsonReader.{readJsonFile, getString};
         let* srcpath = Basis/System/FilePath.filePath("E:/coding/flix/basic-json/demo/sample.json");
         let* ans = readJsonFile(decode(), srcpath);
         let _    = println("${printConfig(ans)}");
@@ -34,9 +34,9 @@ namespace ReadTest {
 
 
     def decode(): JsonReader[JsValue, Config] = 
-        use BasicJson/JsonReader.{point, flatMap, getObjectWith, getFieldWith, getArrayWith, getString};
+        use NativeJson/JsonReader.{point, flatMap, getObjectWith, getFieldWith, getArrayWith, getString};
         getObjectWith(
-            let* x1 = getFieldWith("uxl_template", BasicJson/JsonReader.filePath());
+            let* x1 = getFieldWith("uxl_template", NativeJson/JsonReader.filePath());
             let* x2 = getFieldWith("aib_hierarchy_export", excelTable());
             let* x3 = getFieldWith("args", getArrayWith(getString()));
             // let* _ = getString();
@@ -49,12 +49,12 @@ namespace ReadTest {
 
 
     def excelTable(): JsonReader[JsValue, ExcelTable] = 
-        use BasicJson/JsonReader.{getObjectWith, getFieldWith, getString};
+        use NativeJson/JsonReader.{getObjectWith, getFieldWith, getString};
         use Functor.{<$>};
         use Applicative.{<*>};
         getObjectWith(
         ((x1, x2) -> {file = x1, sheet = x2})
-            <$> getFieldWith("file", BasicJson/JsonReader.filePath())
+            <$> getFieldWith("file", NativeJson/JsonReader.filePath())
             <*> getFieldWith("sheet", getString())
         )
 

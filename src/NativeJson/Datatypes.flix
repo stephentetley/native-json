@@ -15,7 +15,7 @@
  */
 
 
-namespace BasicJson {
+namespace NativeJson {
 
     /// Scope types for JsonReader
     pub enum JsObject {}
@@ -38,23 +38,23 @@ namespace BasicJson {
     instance ToString[JsonValue] {
         pub def toString(x: JsonValue): String = 
             region r {
-                BasicJson/Internal/StringWriter.exec(BasicJson/Datatypes.writeToString(x), r)
+                NativeJson/Internal/StringWriter.exec(NativeJson/Datatypes.writeToString(x), r)
             }
     }
 }
 
-namespace BasicJson/Datatypes {
+namespace NativeJson/Datatypes {
     
-    use BasicJson/Internal.StringWriter;
-    use BasicJson.JsonValue;
-    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, JsonFloat, 
+    use NativeJson/Internal.StringWriter;
+    use NativeJson.JsonValue;
+    use NativeJson.JsonValue.{JsonObject, JsonArray, JsonString, JsonFloat, 
         JsonInt, JsonBool, JsonNull};
 
 
     /// TODO is this efficient as it uses `toString` between recursive levels?
     pub def writeToString(x: JsonValue): StringWriter[r, Unit] \ Write(r) = 
         use Applicative.{*>};
-        use BasicJson/Internal/StringWriter.{writeString, writeParens, writes, writesList, writesMap};        
+        use NativeJson/Internal/StringWriter.{writeString, writeParens, writes, writesList, writesMap};        
         match x { 
             case JsonObject(kvs) => writeString("JsonObject") *> writeParens(true, writesMap(kvs))
             case JsonArray(xs)   => writeString("JsonArray")  *> writeParens(true, writesList(xs))
@@ -63,7 +63,7 @@ namespace BasicJson/Datatypes {
             case JsonInt(n)      => writeString("JsonInt")    *> writeParens(true, writes(n))
             case JsonBool(b)     => writeString("JsonBool")   *> writeParens(true, if (b) writeString("true") else writeString("false"))
             case JsonNull        => writeString("JsonNull")
-            case _               => bug!("BasicJson/Datatypes.writeToString - match fail")
+            case _               => bug!("NativeJson/Datatypes.writeToString - match fail")
         }
 
 }

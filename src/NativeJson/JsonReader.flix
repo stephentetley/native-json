@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-namespace BasicJson {
+namespace NativeJson {
     
     /// This is Impure so we aren't casting to Pure.
     /// Ideally we would track `ef` in the type.
     /// JsonReader has a simple but useful notion of scope - if you are reading
     /// a JSON object the only primitive reader you can use is`getFieldWith`.
     ///
-    pub enum JsonReader[_scope, a](BasicJson.JsonValue -> Result[a, String] & Impure)
+    pub enum JsonReader[_scope, a](NativeJson.JsonValue -> Result[a, String] & Impure)
 
     /// Note - probably we will need to move to a ContReader monad to handle
     /// large input.
@@ -30,38 +30,38 @@ namespace BasicJson {
 
     instance Functor[JsonReader[scope]] {
         pub def map(f: a -> b & ef, x: JsonReader[scope, a]): JsonReader[scope, b] & ef = 
-          BasicJson/JsonReader.map(f, x)  
+          NativeJson/JsonReader.map(f, x)  
     }
 
     instance Applicative[JsonReader[scope]] {
-        pub def point(x: a): JsonReader[scope, a] = BasicJson/JsonReader.point(x)
+        pub def point(x: a): JsonReader[scope, a] = NativeJson/JsonReader.point(x)
 
         pub def ap(mf: JsonReader[scope, a -> b & ef], ma: JsonReader[scope, a]): JsonReader[scope, b] & ef =
-            BasicJson/JsonReader.ap(mf, ma)
+            NativeJson/JsonReader.ap(mf, ma)
     }
 
     instance Monad[JsonReader[scope]] {
         pub def flatMap(f: a -> JsonReader[scope, b] & ef, ma: JsonReader[scope, a]): JsonReader[scope, b] & ef =
-            BasicJson/JsonReader.flatMap(f, ma)
+            NativeJson/JsonReader.flatMap(f, ma)
     }
 
 }    
 
-namespace BasicJson/JsonReader {
+namespace NativeJson/JsonReader {
 
     use Time/Format.DateTimeFormatter;
 
     use Basis/System.FilePath;
 
-    use BasicJson.JsObject;
-    use BasicJson.JsValue;
+    use NativeJson.JsObject;
+    use NativeJson.JsValue;
 
 
-    use BasicJson.JsonReader;
-    use BasicJson.JsonReader.{JsonReader};
+    use NativeJson.JsonReader;
+    use NativeJson.JsonReader.{JsonReader};
 
-    use BasicJson.JsonValue;
-    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
+    use NativeJson.JsonValue;
+    use NativeJson.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonFloat, JsonInt, JsonBool, JsonNull};
 
 
@@ -73,7 +73,7 @@ namespace BasicJson/JsonReader {
     
     pub def readJsonFile(ma: JsonReader[scope, a], path: FilePath): Result[a, String] & Impure = 
         use Result.{flatMap};
-        let* jsv = BasicJson/Parser.parseJsonFile(4, path);
+        let* jsv = NativeJson/Parser.parseJsonFile(4, path);
         runJsonReader(ma, jsv)
 
     pub def point(x: a): JsonReader[scope, a] = 

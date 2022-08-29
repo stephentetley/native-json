@@ -16,7 +16,7 @@
 
 
 
-namespace BasicJson/Internal/ContState {
+namespace NativeJson/Internal/ContState {
 
     ///
     /// ContState is the State monad implemented in CPS. 

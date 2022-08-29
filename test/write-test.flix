@@ -2,22 +2,22 @@
 namespace WriteTest {
 
 
-    use BasicJson.JsonWriter;
+    use NativeJson.JsonWriter;
 
 
     @test    
     def test01(): Result[Unit, String] & Impure = 
-        use BasicJson/Pretty.{renderJson};
-        let (json, _) = BasicJson/JsonWriter.runJsonWriter(encode());
+        use NativeJson/Pretty.{renderJson};
+        let (json, _) = NativeJson/JsonWriter.runJsonWriter(encode());
         let _    = println("${renderJson(json)}");
         Ok()
 
 
 
     def encode(): JsonWriter[ka, Unit] & Impure = 
-        use BasicJson/JsonWriter.{flatMap};
+        use NativeJson/JsonWriter.{flatMap};
         use Applicative.point;
-        use BasicJson/JsonWriter.{putArrayWith, putObjectWith, putFieldWith, putString, putValue};
+        use NativeJson/JsonWriter.{putArrayWith, putObjectWith, putFieldWith, putString, putValue};
         let putLang = (name, year) -> putObjectWith(
                 let* _  = putFieldWith("name", putString(name));
                 let* _  = putFieldWith("year", putValue(year));

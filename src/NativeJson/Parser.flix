@@ -15,7 +15,7 @@
  */
 
 
-namespace BasicJson/Parser {
+namespace NativeJson/Parser {
 
     use Functor.{ignore};
     use Functor.{<$>, <$$>, $>};
@@ -29,8 +29,8 @@ namespace BasicJson/Parser {
     use FlixParsec/TokenSimple.{symbol, lexeme, commaSep, commaSepWith, 
         colon, float64, int64};
 
-    use BasicJson.JsonValue;
-    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
+    use NativeJson.JsonValue;
+    use NativeJson.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonFloat, JsonInt, JsonBool, JsonNull};
 
     /// JSON is always UTF-8...

@@ -15,7 +15,7 @@
  */
 
 
-namespace BasicJson/Pretty {
+namespace NativeJson/Pretty {
 
     use Basis/System.FilePath;
 
@@ -24,9 +24,9 @@ namespace BasicJson/Pretty {
         intersperse, comma, hang, group, lbrace, rbrace, lbracket, rbracket, empty};
     use Text/PrettyPrint.{<>, <<>>, <&&>, <!>};
 
-    use BasicJson/Internal.StringWriter;
-    use BasicJson.JsonValue;
-    use BasicJson.JsonValue.{JsonObject, JsonArray, JsonString, 
+    use NativeJson/Internal.StringWriter;
+    use NativeJson.JsonValue;
+    use NativeJson.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonFloat, JsonInt, JsonBool, JsonNull};
     
     pub def writeJson(path: FilePath, value: JsonValue): Result[Unit, String] & Impure =
@@ -70,7 +70,7 @@ namespace BasicJson/Pretty {
 
     /// TODO escapes, multiline etc.
     pub def ppString(s: String): Doc = 
-        use BasicJson/Internal/StringWriter.{exec, mapX}; 
+        use NativeJson/Internal/StringWriter.{exec, mapX}; 
         region r {
             let cs = String.toList(s);
             let s1 = exec(mapX(appendChar, cs), r);
@@ -79,9 +79,9 @@ namespace BasicJson/Pretty {
 
 
     def appendChar(c: Char): StringWriter[r, Unit] \ Write(r) = 
-        use BasicJson/Internal/StringWriter.{writeString, writeChar};
+        use NativeJson/Internal/StringWriter.{writeString, writeChar};
         use Applicative.{*>};
-        use BasicJson/Internal/Utils.{int32ToHexString};
+        use NativeJson/Internal/Utils.{int32ToHexString};
         let toHex = ch -> Char.toInt32(ch) |> int32ToHexString |> String.padLeft(4, '0');
         match c { 
             case '\\'                   => writeString("\\\\")
