@@ -19,14 +19,14 @@ namespace ReadTest {
         Ok()
 
     type alias Config = 
-        { uxlTemplate :: FilePath
-        , aibHierarchy :: ExcelTable
-        , args :: List[String]
+        { uxlTemplate = FilePath
+        , aibHierarchy = ExcelTable
+        , args = List[String]
         }
 
     type alias ExcelTable = 
-        { file :: FilePath
-        , sheet :: String
+        { file = FilePath
+        , sheet = String
         }
 
     def printConfig(x: Config): String = 
