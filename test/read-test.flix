@@ -1,7 +1,7 @@
 
 namespace ReadTest {
 
-    use Basis/System.FilePath;
+    use Basis/NIO/File.Path;
 
     use NativeJson.JsValue;
     use NativeJson.JsObject;
@@ -13,19 +13,19 @@ namespace ReadTest {
     def test01(): Result[Unit, String] & Impure = 
         use Result.{flatMap};
         use NativeJson/JsonReader.{readJsonFile, getString};
-        let* srcpath = Basis/System/FilePath.filePath("E:/coding/flix/basic-json/demo/sample.json");
+        let* srcpath = Basis/NIO/File/Path.newPath("E:/coding/flix/basic-json/demo/sample.json");
         let* ans = readJsonFile(decode(), srcpath);
         let _    = println("${printConfig(ans)}");
         Ok()
 
     type alias Config = 
-        { uxlTemplate = FilePath
+        { uxlTemplate = Path
         , aibHierarchy = ExcelTable
         , args = List[String]
         }
 
     type alias ExcelTable = 
-        { file = FilePath
+        { file = Path
         , sheet = String
         }
 

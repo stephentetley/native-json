@@ -51,7 +51,7 @@ namespace NativeJson/JsonReader {
 
     use Time/Format.DateTimeFormatter;
 
-    use Basis/System.FilePath;
+    use Basis/NIO/File.Path;
 
     use NativeJson.JsObject;
     use NativeJson.JsValue;
@@ -71,7 +71,7 @@ namespace NativeJson/JsonReader {
 
     pub def runJsonReader(ma: JsonReader[scope, a], jsv: JsonValue): Result[a, String] & Impure = apply1(ma, jsv)
     
-    pub def readJsonFile(ma: JsonReader[scope, a], path: FilePath): Result[a, String] & Impure = 
+    pub def readJsonFile(ma: JsonReader[scope, a], path: Path): Result[a, String] & Impure = 
         use Result.{flatMap};
         let* jsv = NativeJson/Parser.parseJsonFile(4, path);
         runJsonReader(ma, jsv)
@@ -258,8 +258,8 @@ namespace NativeJson/JsonReader {
 
         }
 
-    pub def filePath(): JsonReader[JsValue, FilePath] = 
-        flatMap(s -> liftResult(Basis/System/FilePath.filePath(s)), getString()) 
+    pub def filePath(): JsonReader[JsValue, Path] = 
+        flatMap(s -> liftResult(Basis/NIO/File/Path.newPath(s)), getString()) 
 
     /// Date is a JsonString
     pub def localDate(formatter: DateTimeFormatter[Time/Format.DateFormat]): JsonReader[JsValue, Time.LocalDate] = 

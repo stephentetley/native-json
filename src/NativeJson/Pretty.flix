@@ -17,7 +17,7 @@
 
 namespace NativeJson/Pretty {
 
-    use Basis/System.FilePath;
+    use Basis/NIO/File.Path;
 
     use Text/PrettyPrint.Doc;
     use Text/PrettyPrint.{text, char, dquotes, float64, int64, colon, 
@@ -29,9 +29,9 @@ namespace NativeJson/Pretty {
     use NativeJson.JsonValue.{JsonObject, JsonArray, JsonString, 
         JsonFloat, JsonInt, JsonBool, JsonNull};
     
-    pub def writeJson(path: FilePath, value: JsonValue): Result[Unit, String] & Impure =
+    pub def writeJson(path: Path, value: JsonValue): Result[Unit, String] & Impure =
         let doc = ppJson(value);
-        Text/PrettyPrint.writePretty(path, Basis/Text/Charset.utf_8(), 160, doc)
+        Text/PrettyPrint.writePretty(path, Basis/NIO/Charset/Charset.utf_8(), 160, doc)
 
     pub def renderJson(value: JsonValue): String =
         let doc = ppJson(value);
