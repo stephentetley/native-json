@@ -16,12 +16,14 @@
 
 namespace NativeJson {
     
+    /// TODO change to a MonadLib monad...
+
     /// This is Impure so we aren't casting to Pure.
     /// Ideally we would track `ef` in the type.
     /// JsonReader has a simple but useful notion of scope - if you are reading
     /// a JSON object the only primitive reader you can use is`getFieldWith`.
     ///
-    pub enum JsonReader[_scope, a](NativeJson.JsonValue -> Result[a, String] & Impure)
+    pub enum JsonReader[_scope, a](NativeJson.JsonValue -> Result[a, String] \ IO)
 
     /// Note - probably we will need to move to a ContReader monad to handle
     /// large input.
@@ -29,19 +31,19 @@ namespace NativeJson {
 
 
     instance Functor[JsonReader[scope]] {
-        pub def map(f: a -> b & ef, x: JsonReader[scope, a]): JsonReader[scope, b] & ef = 
+        pub def map(f: a -> b \ ef, x: JsonReader[scope, a]): JsonReader[scope, b] \ ef = 
           NativeJson/JsonReader.map(f, x)  
     }
 
     instance Applicative[JsonReader[scope]] {
         pub def point(x: a): JsonReader[scope, a] = NativeJson/JsonReader.point(x)
 
-        pub def ap(mf: JsonReader[scope, a -> b & ef], ma: JsonReader[scope, a]): JsonReader[scope, b] & ef =
+        pub def ap(mf: JsonReader[scope, a -> b \ ef], ma: JsonReader[scope, a]): JsonReader[scope, b] \ ef =
             NativeJson/JsonReader.ap(mf, ma)
     }
 
     instance Monad[JsonReader[scope]] {
-        pub def flatMap(f: a -> JsonReader[scope, b] & ef, ma: JsonReader[scope, a]): JsonReader[scope, b] & ef =
+        pub def flatMap(f: a -> JsonReader[scope, b] \ ef, ma: JsonReader[scope, a]): JsonReader[scope, b] \ ef =
             NativeJson/JsonReader.flatMap(f, ma)
     }
 
@@ -65,22 +67,22 @@ namespace NativeJson/JsonReader {
         JsonFloat, JsonInt, JsonBool, JsonNull};
 
 
-    def apply1(ma: JsonReader[scope, a], jsv: JsonValue): Result[a, String] & Impure = 
+    def apply1(ma: JsonReader[scope, a], jsv: JsonValue): Result[a, String] \ IO = 
         let JsonReader(x1) = ma;
         x1(jsv)
 
-    pub def runJsonReader(ma: JsonReader[scope, a], jsv: JsonValue): Result[a, String] & Impure = apply1(ma, jsv)
+    pub def runJsonReader(ma: JsonReader[scope, a], jsv: JsonValue): Result[a, String] \ IO = apply1(ma, jsv)
     
-    pub def readJsonFile(ma: JsonReader[scope, a], path: Path): Result[a, String] & Impure = 
+    pub def readJsonFile(ma: JsonReader[scope, a], path: Path): Result[a, String] \ IO = 
         use Result.{flatMap};
         let* jsv = NativeJson/Parser.parseJsonFile(4, path);
         runJsonReader(ma, jsv)
 
     pub def point(x: a): JsonReader[scope, a] = 
-        JsonReader(_ -> Ok(x) as & Impure)
+        JsonReader(_ -> unsafe_cast Ok(x) as \ IO)
 
     pub def throwError(msg: String): JsonReader[scope, a] =
-        JsonReader(_ -> Err(msg) as & Impure)
+        JsonReader(_ -> unsafe_cast Err(msg) as \ IO)
 
     pub def fail(message: String) : JsonReader[scope, a] = throwError(message)
 
@@ -97,36 +99,36 @@ namespace NativeJson/JsonReader {
         })
 
     /// Needs to allow allow effects (e.g create / access arrays)
-    pub def map(fn: a -> b & ef, ma: JsonReader[scope, a]): JsonReader[scope, b] & ef = 
-        JsonReader(jsv -> 
+    pub def map(fn: a -> b \ ef, ma: JsonReader[scope, a]): JsonReader[scope, b] \ ef = 
+        unsafe_cast (JsonReader(jsv -> 
             match apply1(ma, jsv) { 
-                case Ok(a) => { let ans = fn(a) as & Impure; Ok(ans) }
+                case Ok(a) => { let ans = unsafe_cast fn(a) as \ IO; Ok(ans) }
                 case Err(e) => Err(e)
             }
-        ) as & ef
+        )) as \ ef
 
-    pub def ap(mf: JsonReader[scope, a -> b & ef], ma: JsonReader[scope, a]): JsonReader[scope, b] & ef = 
-        JsonReader(jsv -> 
+    pub def ap(mf: JsonReader[scope, a -> b \ ef], ma: JsonReader[scope, a]): JsonReader[scope, b] \ ef = 
+        unsafe_cast (JsonReader(jsv -> 
             match apply1(mf, jsv) { 
                 case Ok(f) => match apply1(ma, jsv) { 
-                    case Ok(a) => { let ans = f(a) as & Impure; Ok(ans) }
+                    case Ok(a) => { let ans = unsafe_cast f(a) as \ IO; Ok(ans) }
                     case Err(e) => Err(e)
                 }
                 case Err(e) => Err(e)
             }
-        ) as & ef
+        )) as \ ef
 
 
 
-    pub def bind(ma: JsonReader[scope, a], fn: a -> JsonReader[scope, b] & ef): JsonReader[scope, b] & ef= 
-        JsonReader(jsv -> 
+    pub def bind(ma: JsonReader[scope, a], fn: a -> JsonReader[scope, b] \ ef): JsonReader[scope, b] \ ef= 
+        unsafe_cast (JsonReader(jsv -> 
             match apply1(ma, jsv) { 
-                case Ok(a) => apply1(fn(a) as & Impure, jsv) 
+                case Ok(a) => apply1(unsafe_cast fn(a) as \ IO, jsv) 
                 case Err(e) => Err(e)
             }
-        ) as & ef
+        )) as \ ef
 
-    pub def flatMap(fn: a -> JsonReader[scope, b] & ef, ma: JsonReader[scope, a]): JsonReader[scope, b] & ef = bind(ma, fn)
+    pub def flatMap(fn: a -> JsonReader[scope, b] \ ef, ma: JsonReader[scope, a]): JsonReader[scope, b] \ ef = bind(ma, fn)
 
 
     pub def liftOption(x: Option[a], errMsg: String): JsonReader[scope, a] =  match x {
@@ -183,39 +185,39 @@ namespace NativeJson/JsonReader {
 
     pub def getNull(): JsonReader[JsValue, Unit] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonNull => Ok() as & Impure
+            case JsonNull => unsafe_cast Ok() as \ IO
             case _ => Err("getNull")
         })
 
     pub def getBool(): JsonReader[JsValue, Bool] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonBool(b) => Ok(b) as & Impure
+            case JsonBool(b) => unsafe_cast Ok(b) as \ IO
             case _ => Err("getBool")
         })
 
     pub def getString(): JsonReader[JsValue, String] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonString(s) => Ok(s) as & Impure
+            case JsonString(s) => unsafe_cast Ok(s) as \ IO
             case _ => Err("getString")
         })
 
     /// Reads both ints and floats
     pub def getNumber(): JsonReader[JsValue, Float64] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonFloat(d) => Ok(d) as & Impure
+            case JsonFloat(d) => unsafe_cast Ok(d) as \ IO
             case JsonInt(i) => Ok(Int64.toFloat64(i))
             case _ => Err("getNumber")
         })
 
     pub def getFloat(): JsonReader[JsValue, Float64] = 
         JsonReader(jsv  -> match jsv { 
-            case JsonFloat(d) => Ok(d) as & Impure
+            case JsonFloat(d) => unsafe_cast Ok(d) as \ IO
             case _ => Err("getNumber")
         })
 
     pub def getInteger(): JsonReader[JsValue, Int64] = 
         JsonReader(jsv  -> match jsv {
-            case JsonInt(i) => Ok(i) as & Impure
+            case JsonInt(i) => unsafe_cast Ok(i) as \ IO
             case _ => Err("getInteger")
         })
 
@@ -248,7 +250,7 @@ namespace NativeJson/JsonReader {
     def withArrayHelper(ma: JsonReader[scope, a], 
                         xs: List[JsonValue], 
                         fk: String-> Result[List[a], String], 
-                        sk: List[a] -> Result[List[a], String]): Result[List[a], String] & Impure = 
+                        sk: List[a] -> Result[List[a], String]): Result[List[a], String] \ IO = 
         match xs { 
             case Nil => sk(Nil)
             case x :: rs => match apply1(ma, x) { 
@@ -276,7 +278,7 @@ namespace NativeJson/JsonReader {
 
 
     pub def satisfy(test: JsonValue -> Bool): JsonReader[scope, JsonValue] = 
-        JsonReader(jsv  -> if (test(jsv)) (Ok(jsv) as & Impure) else Err("satisfy"))
+        JsonReader(jsv  -> if (test(jsv)) (unsafe_cast Ok(jsv) as \ IO) else Err("satisfy"))
 
     /// TODO - which Parsec style combinators are useful, especially if we anticipate
     /// "semi-structured" reading / traversal?

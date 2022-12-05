@@ -24,19 +24,19 @@ namespace NativeJson/Internal {
     pub enum StringWriter[r: Region, a: Type](StringBuilder[r] -> a)
 
     instance Functor[StringWriter[r]] {
-        pub def map(f: a -> b & ef, ma: StringWriter[r, a]): StringWriter[r, b] & ef = 
+        pub def map(f: a -> b \ ef, ma: StringWriter[r, a]): StringWriter[r, b] \ ef = 
             NativeJson/Internal/StringWriter.map(f, ma)
     }
 
     instance Applicative[StringWriter[r]] {
         pub def point(x: a): StringWriter[r, a] = NativeJson/Internal/StringWriter.point(x)
 
-        pub def ap(mf: StringWriter[r, a -> b & ef], ma: StringWriter[r, a]): StringWriter[r, b] & ef = 
+        pub def ap(mf: StringWriter[r, a -> b \ ef], ma: StringWriter[r, a]): StringWriter[r, b] \ ef = 
             NativeJson/Internal/StringWriter.ap(mf, ma)
     }
 
     instance Monad[StringWriter[r]] {
-        pub def flatMap(f: a -> StringWriter[r, b] & ef, ma: StringWriter[r, a]): StringWriter[r, b] & ef =
+        pub def flatMap(f: a -> StringWriter[r, b] \ ef, ma: StringWriter[r, a]): StringWriter[r, b] \ ef =
             NativeJson/Internal/StringWriter.flatMap(f, ma)
     }
 
@@ -51,7 +51,7 @@ namespace NativeJson/Internal/StringWriter {
 
     pub def run(ma: StringWriter[r, a], r: Region[r]): (String, a) \ Write(r) = 
         let sb = new StringBuilder(r);
-        let ans = apply1(ma, sb) as \ Write(r);
+        let ans = unsafe_cast apply1(ma, sb) as \ Write(r);
         let s = StringBuilder.toString(sb);
         (s, ans) 
 
@@ -65,40 +65,45 @@ namespace NativeJson/Internal/StringWriter {
     pub def point(x: a): StringWriter[r, a] = StringWriter(_ -> x)
 
     /// Needs to allow allow effects (e.g create / access arrays)
-    pub def map(fn: a -> b & ef, ma: StringWriter[r, a]): StringWriter[r, b] & ef = 
-        StringWriter(sb -> 
+    pub def map(fn: a -> b \ ef, ma: StringWriter[r, a]): StringWriter[r, b] \ ef = 
+        unsafe_cast (StringWriter(sb -> 
             let a = apply1(ma, sb);
-            fn(a) as & Pure
-        ) as & ef
+            unsafe_cast fn(a) as \ {}
+        )) as \ ef
 
-    pub def ap(mf: StringWriter[r, a -> b & ef], ma: StringWriter[r, a]): StringWriter[r, b] & ef = 
-        StringWriter(sb -> 
+    pub def ap(mf: StringWriter[r, a -> b \ ef], ma: StringWriter[r, a]): StringWriter[r, b] \ ef = 
+        unsafe_cast (StringWriter(sb -> 
             let f = apply1(mf, sb);
             let a = apply1(ma, sb);
-            f(a) as & Pure
-        ) as & ef
+            unsafe_cast f(a) as \ {}
+        )) as \ ef
 
-    pub def bind(ma: StringWriter[r, a], fn: a -> StringWriter[r, b] & ef): StringWriter[r, b] & ef= 
-        StringWriter(sb -> 
+    pub def bind(ma: StringWriter[r, a], fn: a -> StringWriter[r, b] \ ef): StringWriter[r, b] \ ef= 
+        unsafe_cast (StringWriter(sb -> 
             let a = apply1(ma, sb);
-            apply1(fn(a) as & Pure, sb)
-        ) as & ef
+            apply1(unsafe_cast fn(a) as \ {}, sb)
+        )) as \ ef
 
-    pub def flatMap(fn: a -> StringWriter[r, b] & ef, ma: StringWriter[r, a]): StringWriter[r, b] & ef = bind(ma, fn)
+    pub def flatMap(fn: a -> StringWriter[r, b] \ ef, ma: StringWriter[r, a]): StringWriter[r, b] \ ef = 
+        bind(ma, fn)
 
 
     pub def writeString(s: String): StringWriter[r, Unit] \ Write(r) = 
-        StringWriter(sb -> StringBuilder.append!(s, sb) as & Pure) as \ Write(r)
+        unsafe_cast (StringWriter(sb -> 
+            unsafe_cast StringBuilder.append!(s, sb) as \ {}
+        )) as \ Write(r)
 
     pub def writeChar(c: Char): StringWriter[r, Unit] \ Write(r) = 
-        StringWriter(sb -> StringBuilder.append!(c, sb) as & Pure) as \ Write(r)
+        unsafe_cast (StringWriter(sb -> 
+            unsafe_cast StringBuilder.append!(c, sb) as \ {}
+        )) as \ Write(r)
 
-    pub def mapX(f: a -> StringWriter[r, b] & ef, xs: List[a]): StringWriter[r, Unit] & ef = 
-        StringWriter(sb -> 
-            mapXHelper(sb, f, xs) as & Pure
-        ) as & ef
+    pub def mapX(f: a -> StringWriter[r, b] \ ef, xs: List[a]): StringWriter[r, Unit] \ ef = 
+        unsafe_cast (StringWriter(sb -> 
+            unsafe_cast mapXHelper(sb, f, xs) as \ {}
+        )) as \ ef
 
-    def mapXHelper(sb: StringBuilder[r], f: a -> StringWriter[r, b] & ef, xs: List[a]): Unit & ef = 
+    def mapXHelper(sb: StringBuilder[r], f: a -> StringWriter[r, b] \ ef, xs: List[a]): Unit \ ef = 
         match xs {
             case x :: rs => {
                 let ma = f(x);
